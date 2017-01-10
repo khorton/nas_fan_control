@@ -54,7 +54,7 @@
 ## DEBUG LEVEL
 ## 0 means no debugging. 1,2,3,4 provide more verbosity
 ## You should run this script in at least level 1 to verify its working correctly on your system
-$debug = 1;
+$debug = 2;
 
 ## CPU THRESHOLD TEMPS
 ## A modern CPU can heat up from 35C to 60C in a second or two. The fan duty cycle is set based on this
@@ -67,7 +67,7 @@ $low_cpu_temp = 35;        # will go LOW when we fall below 35 again
 ## This is the temperature that we regard as being uncomfortable. The higher this is the
 ## more silent your system.
 ## Note, it is possible for your HDs to go above this... but if your cooling is good, they shouldn't.
-$hd_max_allowed_temp = 38;    # celsius. you will hit 100% duty cycle when you HDs hit this temp.
+$hd_max_allowed_temp = 39;    # celsius. you will hit 100% duty cycle when you HDs hit this temp.
 
 ## CPU TEMP TO OVERRIDE HD FANS
 ## when the CPU climbs above this temperature, the HD fans will be overridden
@@ -93,7 +93,7 @@ $hd_fans_cool_cpu = 1;        # 1 if the hd fans should spin up to cool the cpu,
 ## Connected to the cpu_fan_header and the hd_fan_header.
 ## These values are used to verify high/low fan speeds and trigger a BMC reset if necessary.
 $cpu_max_fan_speed     = 1700;
-$hd_max_fan_speed     = 1400;
+$hd_max_fan_speed     = 1500;
 
 
 ## CPU FAN DUTY LEVELS
@@ -107,7 +107,7 @@ $fan_duty_low     = 30;
 $hd_fan_duty_high     = 100;    # percentage on, ie 100% is full speed.
 $hd_fan_duty_med_high     = 80;
 $hd_fan_duty_med_low    = 50;
-$hd_fan_duty_low     = 30;    # some 120mm fans stall below 30.
+$hd_fan_duty_low     = 25;    # some 120mm fans stall below 30.
 
 
 ## FAN ZONES
@@ -125,7 +125,7 @@ $hd_fan_zone = 1;
 ## these are the fan headers which are used to verify the fan zone is high. FAN1+ are all in Zone 0, FANA is Zone 1.
 ## cpu_fan_header should be in the cpu_fan_zone
 ## hd_fan_header should be in the hd_fan_zone
-$cpu_fan_header = "FAN1";    
+$cpu_fan_header = "FAN2";    
 $hd_fan_header = "FANA";
 
 
