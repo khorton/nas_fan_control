@@ -92,7 +92,7 @@ $hd_fans_cool_cpu = 1;        # 1 if the hd fans should spin up to cool the cpu,
 ## You need to determine the actual max fan speeds that are achieved by the fans
 ## Connected to the cpu_fan_header and the hd_fan_header.
 ## These values are used to verify high/low fan speeds and trigger a BMC reset if necessary.
-$cpu_max_fan_speed     = 1700;
+$cpu_max_fan_speed     = 1800;
 $hd_max_fan_speed     = 1500;
 
 
@@ -126,7 +126,7 @@ $hd_fan_zone = 1;
 ## cpu_fan_header should be in the cpu_fan_zone
 ## hd_fan_header should be in the hd_fan_zone
 $cpu_fan_header = "FAN2";    
-$hd_fan_header = "FANA";
+$hd_fan_header = "FANB";
 
 
 
