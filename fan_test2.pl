@@ -54,7 +54,7 @@
 ## DEBUG LEVEL
 ## 0 means no debugging. 1,2,3,4 provide more verbosity
 ## You should run this script in at least level 1 to verify its working correctly on your system
-$debug = 3;
+$debug = 4;
 
 ## CPU THRESHOLD TEMPS
 ## A modern CPU can heat up from 35C to 60C in a second or two. The fan duty cycle is set based on this
@@ -200,8 +200,8 @@ sub main
     my $override_hd_fan_level = 0;
     my $last_hd_check_time = 0;
     my $hd_fan_duty = 0;
-    # my $hd_ave_temp_old = 30;
-    my $temp_error = 0;
+    $hd_ave_temp_old = $hd_ave_target;
+    $temp_error = 0;
     my $integral = 0;
 
     
@@ -583,7 +583,7 @@ sub calculate_hd_fan_duty_cycle_PID
     my ($hd_max_temp, $hd_ave_temp, $old_hd_duty) = @_;
     my $hd_duty;
     
-    $temp_error_old = $temp_error;
+    my $temp_error_old = $hd_ave_temp_old - $hd_ave_target;
     my $temp_error = $hd_ave_temp - $hd_ave_target;
 
     if ($hd_temp >= $hd_max_allowed_temp  ) 
@@ -600,8 +600,9 @@ sub calculate_hd_fan_duty_cycle_PID
         my $I = $Ki * $integral;
         my $D = $Kd * $derivative;
         $hd_duty = $old_hd_duty + $P + $I + $D;
-        dprint(3, "PID corrections are P = $P, I = $I and D = $D\n");
-            dprint(0, "PID control new duty cycle is $$hd_duty%\n") unless $old_hd_duty == $hd_duty;
+        dprint(2, "temperature error = $temp_error\n");
+        dprint(2, "PID corrections are P = $P, I = $I and D = $D\n");
+        dprint(0, "PID control new duty cycle is $hd_duty%\n") unless $old_hd_duty == $hd_duty;
     }
     else
     {
@@ -611,12 +612,16 @@ sub calculate_hd_fan_duty_cycle_PID
     
     $hd_ave_temp_old = $hd_ave_temp;
     
-    if ($hd_duty > 100)
+    if ($hd_duty > $hd_fan_duty_high)
     {
-        $hd_duty = 100;
+        $hd_duty = $hd_fan_duty_high;
+    }
+    elsif ($hd_duty < $hd_fan_duty_low)
+    {
+        $hd_duty = $hd_fan_duty_low;
     }
 
-    return $hd_duty;
+    return int($hd_duty);
 }
 
 sub build_date_string
