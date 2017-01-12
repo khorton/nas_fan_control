@@ -47,6 +47,13 @@
 #            on the actual load. Your results will vary, and for best results you should tune controller with 
 #            mprime testing at various thread levels. Updated the cpu threasholds to 35/45/55 because of the improved
 #            responsiveness of the get_cpu_temp function
+#
+# The following changes are by Kevin Horton
+# 2017-01-10 Reworked get_hd_list() to exclude SSDs
+#            Added function to calculate maximum and average HD temperatures.
+#            Replaced original HD fan control scheme with a PID controller, controlling the average HD temp..
+#            Added test if any HD reaches a specified max temperature.  If so, the PID loop is overridden, and HD
+#              fans are set to 100%
 ###############################################################################################
 ## CONFIGURATION
 ################
@@ -54,7 +61,7 @@
 ## DEBUG LEVEL
 ## 0 means no debugging. 1,2,3,4 provide more verbosity
 ## You should run this script in at least level 1 to verify its working correctly on your system
-$debug = 4;
+$debug = 5;
 
 ## CPU THRESHOLD TEMPS
 ## A modern CPU can heat up from 35C to 60C in a second or two. The fan duty cycle is set based on this
@@ -76,16 +83,22 @@ $hd_max_allowed_temp = 40;    # celsius. PID control will be aborted and HD fans
 ## sufficient cooling.
 $cpu_hd_override_temp = 62;
 
+## HD FAN DUTY CYCLE TO OVERRIDE CPU FANS
+## when the HD duty cycle exceeds this value, the CPU fans may be overridden to help cool HDs
+## The function only occurs if $cpu_fans_cool_hd = 1
+$hd_cpu_override_duty_cycle = 80;
+
 ## CPU/HD SHARED COOLING
 ## If your HD fans contribute to the cooling of your CPU you should set this value.
 ## It will mean when you CPU heats up your HD fans will be turned up to help cool the
 ## case/cpu. This would only not apply if your HDs and fans are in a separate thermal compartment.
 $hd_fans_cool_cpu = 1;        # 1 if the hd fans should spin up to cool the cpu, 0 otherwise
+$cpu_fans_cool_hd = 1;      # 1 if the cpu fans should spin up to cool the HDs, when needed.  0 otherwise
 
 ## PID CONTROL GAINS
-$Kp = 12;
+$Kp = 15;
 $Ki = 0;
-$Kd = 100;
+$Kd = 150;
 
 
 
@@ -173,6 +186,7 @@ $bmc_fail_threshold    = 1;     # will retry n times before rebooting
 # massage fan speeds
 $cpu_max_fan_speed *= 0.8;
 $hd_max_fan_speed *= 0.8;
+$cpu_hd_fan_speed = $cpu_max_fan_speed * 0.64;
 
 
 #fan/bmc verification globals/timers
@@ -199,7 +213,7 @@ sub main
     my $old_cpu_fan_level = "";
     my $override_hd_fan_level = 0;
     my $last_hd_check_time = 0;
-    my $hd_fan_duty = 0;
+    $hd_fan_duty = 90;
     $hd_ave_temp_old = $hd_ave_target;
     $temp_error = 0;
     my $integral = 0;
@@ -356,7 +370,7 @@ sub get_hd_max_ave_temp
 
     my $ave_temp = $temp_sum / $HD_count;
 
-    dprint(0, "AverageHD Temperature: $ave_temp\n");
+    dprint(0, "Average HD Temperature: $ave_temp\n");
 
 
     return ($max_temp, $ave_temp);
@@ -401,7 +415,7 @@ sub get_hd_max_ave_temp
 sub verify_fan_speed_levels
 {
     my( $cpu_fan_level, $hd_fan_duty ) = @_;
-    dprint( 4, "verify_fan_speed_levels: cpu_fan_level: $cpu_fan_level, hd_fan_duty: $hd_fan_duty\n");
+    dprint( 4, "verify_fan_speed_levels: cpu_fan_level: $cpu_fan_level, hd_fan_duty: $hd_fan_duty, CPU HD override: $cpu_min_duty_cycle_from_hds\n");
 
     my $extra_delay_before_next_check = 0;
     
@@ -450,15 +464,26 @@ sub verify_fan_speed_levels
             my $hd_fan_is_wrong = 0;    
             
             #verify cpu fans
-            if( $cpu_fan_level eq "high" && $cpu_fan_speed < $cpu_max_fan_speed )
+            if( $cpu_min_duty_cycle_from_hds = 0 )
             {
-                dprint(0, "CPU fan speed should be high, but $cpu_fan_speed < $cpu_max_fan_speed.\n");
-                $cpu_fan_is_wrong=1;
+                if( $cpu_fan_level eq "high" && $cpu_fan_speed < $cpu_max_fan_speed )
+                {
+                    dprint(0, "CPU fan speed should be high, but $cpu_fan_speed < $cpu_max_fan_speed.\n");
+                    $cpu_fan_is_wrong=1;
+                }
+                elsif( $cpu_fan_level eq "low" && $cpu_fan_speed > $cpu_max_fan_speed )
+                {
+                    dprint(0, "CPU fan speed should be low, but $cpu_fan_speed > $cpu_max_fan_speed.\n");
+                    $cpu_fan_is_wrong=1;
+                }
             }
-            elsif( $cpu_fan_level eq "low" && $cpu_fan_speed > $cpu_max_fan_speed )
+            else
             {
-                dprint(0, "CPU fan speed should be low, but $cpu_fan_speed > $cpu_max_fan_speed.\n");
-                $cpu_fan_is_wrong=1;
+                if( $cpu_fan_speed < $cpu_hd_fan_speed )
+                {
+                    dprint(0, "CPU fan speed should be controlled by HD temps, but $cpu_fan_speed < $cpu_hd_fan_speed.\n");
+                    $cpu_fan_is_wrong=1;
+                }
             }
             
             #verify hd fans
@@ -533,7 +558,7 @@ sub control_cpu_fan
 
     my $cpu_fan_level = decide_cpu_fan_level( $cpu_temp, $old_cpu_fan_level );
 
-    if( $old_cpu_fan_level ne $cpu_fan_level )
+    if( $old_cpu_fan_level ne $cpu_fan_level || $cpu_min_duty_cycle_from_hds != 0 )
     {
         dprint( 1, "CPU Fan changing... ($cpu_fan_level)\n");
         set_fan_zone_level( $cpu_fan_zone, $cpu_fan_level );    
@@ -586,12 +611,12 @@ sub calculate_hd_fan_duty_cycle_PID
     my $temp_error_old = $hd_ave_temp_old - $hd_ave_target;
     my $temp_error = $hd_ave_temp - $hd_ave_target;
 
-    if ($hd_temp >= $hd_max_allowed_temp  ) 
+    if ($hd_max_temp >= $hd_max_allowed_temp  ) 
     {
         $hd_duty = $hd_fan_duty_high;
         dprint(0, "Drives are too hot, going to $hd_fan_duty_high%\n") unless $old_hd_duty == $hd_duty;
      }
-    elsif ($hd_temp >= 0 )
+    elsif ($hd_max_temp >= 0 )
     {
         my $temp_error = $hd_ave_temp - $hd_ave_target;
         $integral += $temp_error * $hd_polling_interval / 60;
@@ -600,8 +625,8 @@ sub calculate_hd_fan_duty_cycle_PID
         my $I = $Ki * $integral;
         my $D = $Kd * $derivative;
         $hd_duty = $old_hd_duty + $P + $I + $D;
-        dprint(2, "temperature error = $temp_error\n");
-        dprint(2, "PID corrections are P = $P, I = $I and D = $D\n");
+        dprint(1, "temperature error = $temp_error\n");
+        dprint(1, "PID corrections are P = $P, I = $I and D = $D\n");
         dprint(0, "PID control new duty cycle is $hd_duty%\n") unless $old_hd_duty == $hd_duty;
     }
     else
@@ -621,7 +646,18 @@ sub calculate_hd_fan_duty_cycle_PID
         $hd_duty = $hd_fan_duty_low;
     }
 
-    return int($hd_duty);
+    $hd_duty = int($hd_duty);
+
+    if ($hd_duty > $hd_cpu_override_duty_cycle)
+    {
+        $cpu_min_duty_cycle_from_hds = $hd_duty;
+    }
+    else
+    {
+        $cpu_min_duty_cycle_from_hds = 0;
+    }
+
+    return $hd_duty;
 }
 
 sub build_date_string
@@ -848,6 +884,12 @@ sub set_fan_zone_level
     else
     {
         $duty = $fan_duty_high;
+    }
+
+    if ( $cpu_min_duty_cycle_from_hds > $duty )
+    {
+        $duty = $cpu_min_duty_cycle_from_hds;
+        dprint( 2, "CPU Fan overridden by HD temps\n");
     }
 
     set_fan_zone_duty_cycle( $fan_zone, $duty );
