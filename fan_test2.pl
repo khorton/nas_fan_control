@@ -93,7 +93,7 @@ $hd_cpu_override_duty_cycle = 80;
 ## It will mean when you CPU heats up your HD fans will be turned up to help cool the
 ## case/cpu. This would only not apply if your HDs and fans are in a separate thermal compartment.
 $hd_fans_cool_cpu = 1;        # 1 if the hd fans should spin up to cool the cpu, 0 otherwise
-$cpu_fans_cool_hd = 1;      # 1 if the cpu fans should spin up to cool the HDs, when needed.  0 otherwise
+$cpu_fans_cool_hd = 0;      # 1 if the cpu fans should spin up to cool the HDs, when needed.  0 otherwise
 
 ## PID CONTROL GAINS
 $Kp = 15;
@@ -648,7 +648,7 @@ sub calculate_hd_fan_duty_cycle_PID
 
     $hd_duty = int($hd_duty);
 
-    if ($hd_duty > $hd_cpu_override_duty_cycle)
+    if ($cpu_fans_cool_hd == 1 && $hd_duty > $hd_cpu_override_duty_cycle)
     {
         $cpu_min_duty_cycle_from_hds = $hd_duty;
     }
