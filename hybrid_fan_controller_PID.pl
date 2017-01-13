@@ -75,7 +75,7 @@ $low_cpu_temp = 35;        # will go LOW when we fall below 35 again
 ## more silent your system.
 ## Note, it is possible for your HDs to go above this... but if your cooling is good, they shouldn't.
 $hd_ave_target = 36;  # PID control loop will target this average temperature
-$hd_max_allowed_temp = 40;    # celsius. PID control will be aborted and HD fans set to 100% duty cycle when a HD hits this temp.
+$hd_max_allowed_temp = 40; # celsius. PID control aborts and fans set to 100% duty cycle when a HD hits this temp.
 
 ## CPU TEMP TO OVERRIDE HD FANS
 ## when the CPU climbs above this temperature, the HD fans will be overridden
@@ -558,7 +558,15 @@ sub control_cpu_fan
 
     if( $old_cpu_fan_level ne $cpu_fan_level || $cpu_min_duty_cycle_from_hds != 0 )
     {
-        dprint( 1, "CPU Fan changing... ($cpu_fan_level)\n");
+        if ($cpu_min_duty_cycle_from_hds == 0)
+        {
+            dprint( 1, "CPU Fan changing... ($cpu_fan_level)\n");
+        }
+        else
+        {
+            dprint( 1, "CPU Fan set.to help cool HDs.\n");
+        }
+        
         set_fan_zone_level( $cpu_fan_zone, $cpu_fan_level );    
     }
 
