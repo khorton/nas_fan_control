@@ -631,6 +631,18 @@ sub calculate_hd_fan_duty_cycle_PID
         my $I = $Ki * $integral;
         my $D = $Kd * $derivative;
         $hd_duty = $old_hd_duty + $P + $I + $D;
+
+        if ($hd_duty > $hd_fan_duty_high)
+        {
+            $hd_duty = $hd_fan_duty_high;
+        }
+        elsif ($hd_duty < $hd_fan_duty_low)
+        {
+            $hd_duty = $hd_fan_duty_low;
+        }
+
+        $hd_duty = int($hd_duty);
+
         dprint(1, "temperature error = $temp_error\n");
         dprint(1, "PID corrections are P = $P, I = $I and D = $D\n");
         dprint(0, "PID control new duty cycle is $hd_duty%\n") unless $old_hd_duty == $hd_duty;
@@ -643,17 +655,6 @@ sub calculate_hd_fan_duty_cycle_PID
     
     $hd_ave_temp_old = $hd_ave_temp;
     
-    if ($hd_duty > $hd_fan_duty_high)
-    {
-        $hd_duty = $hd_fan_duty_high;
-    }
-    elsif ($hd_duty < $hd_fan_duty_low)
-    {
-        $hd_duty = $hd_fan_duty_low;
-    }
-
-    $hd_duty = int($hd_duty);
-
     if ($cpu_fans_cool_hd == 1 && $hd_duty > $hd_cpu_override_duty_cycle)
     {
         $cpu_min_duty_cycle_from_hds = $hd_duty;
