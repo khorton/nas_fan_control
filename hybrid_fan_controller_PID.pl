@@ -65,8 +65,8 @@ $debug = 5;
 
 ## CPU THRESHOLD TEMPS
 ## A modern CPU can heat up from 35C to 60C in a second or two. The fan duty cycle is set based on this
-$high_cpu_temp = 55;        # will go HIGH when we hit
-$med_cpu_temp = 45;         # will go MEDIUM when we hit, or drop below again
+$high_cpu_temp = 55;       # will go HIGH when we hit
+$med_cpu_temp = 45;        # will go MEDIUM when we hit, or drop below again
 $low_cpu_temp = 35;        # will go LOW when we fall below 35 again
 
 ## HD THRESHOLD TEMPS
@@ -92,14 +92,13 @@ $hd_cpu_override_duty_cycle = 80;
 ## If your HD fans contribute to the cooling of your CPU you should set this value.
 ## It will mean when you CPU heats up your HD fans will be turned up to help cool the
 ## case/cpu. This would only not apply if your HDs and fans are in a separate thermal compartment.
-$hd_fans_cool_cpu = 1;        # 1 if the hd fans should spin up to cool the cpu, 0 otherwise
+$hd_fans_cool_cpu = 1;      # 1 if the hd fans should spin up to cool the cpu, 0 otherwise
 $cpu_fans_cool_hd = 1;      # 1 if the cpu fans should spin up to cool the HDs, when needed.  0 otherwise
 
 ## PID CONTROL GAINS
 $Kp = 16;
 $Ki = 0;
 $Kd = 150;
-
 
 
 #######################
@@ -110,7 +109,7 @@ $Kd = 150;
 ## You need to determine the actual max fan speeds that are achieved by the fans
 ## Connected to the cpu_fan_header and the hd_fan_header.
 ## These values are used to verify high/low fan speeds and trigger a BMC reset if necessary.
-$cpu_max_fan_speed     = 1800;
+$cpu_max_fan_speed    = 1800;
 $hd_max_fan_speed     = 1500;
 
 
@@ -122,10 +121,10 @@ $fan_duty_low     = 30;
 
 ## HD FAN DUTY LEVELS
 ## These levels are used to control the HD fans
-$hd_fan_duty_high     = 100;    # percentage on, ie 100% is full speed.
-$hd_fan_duty_med_high     = 80;
-$hd_fan_duty_med_low    = 50;
-$hd_fan_duty_low     = 25;    # some 120mm fans stall below 30.
+$hd_fan_duty_high      = 100;    # percentage on, ie 100% is full speed.
+$hd_fan_duty_med_high  = 80;
+$hd_fan_duty_med_low   = 50;
+$hd_fan_duty_low       = 25;    # some 120mm fans stall below 30.
 
 
 ## FAN ZONES
@@ -136,7 +135,7 @@ $hd_fan_duty_low     = 25;    # some 120mm fans stall below 30.
 # 0 = FAN1..5
 # 1 = FANA
 $cpu_fan_zone = 0;
-$hd_fan_zone = 1;
+$hd_fan_zone  = 1;
 
 
 ## FAN HEADERS
@@ -144,7 +143,7 @@ $hd_fan_zone = 1;
 ## cpu_fan_header should be in the cpu_fan_zone
 ## hd_fan_header should be in the hd_fan_zone
 $cpu_fan_header = "FAN2";    
-$hd_fan_header = "FANB";
+$hd_fan_header  = "FANB";
 
 
 
@@ -191,8 +190,8 @@ $cpu_hd_fan_speed = $cpu_max_fan_speed * 0.64;
 
 #fan/bmc verification globals/timers
 $last_fan_level_change_time = 0;        # the time when we changed a fan level last
-$fan_unreadable_time = 0;            # the time when a fan read failure started, 0 if there is none.
-$bmc_fail_count = 0;                # how many times the fans failed verification in the last period. 
+$fan_unreadable_time        = 0;        # the time when a fan read failure started, 0 if there is none.
+$bmc_fail_count             = 0;        # how many times the fans failed verification in the last period. 
 
 #this is the last cpu temp that was read        
 $last_cpu_temp = 0;
@@ -287,7 +286,6 @@ sub main
 
 sub get_hd_list
 {
-    # my $disk_list = `camcontrol devlist | sed 's:.*(::;s:).*::;s:,pass[0-9]*::;s:pass[0-9]*,::' | egrep '^[a]*da[0-9]+\$' | tr '\012' ' '`;
     my $disk_list = `camcontrol devlist | grep -v "SSD" | sed 's:.*(::;s:).*::;s:,pass[0-9]*::;s:pass[0-9]*,::' | egrep '^[a]*da[0-9]+\$' | tr '\012' ' '`;
     dprint(3,"$disk_list\n");
 
