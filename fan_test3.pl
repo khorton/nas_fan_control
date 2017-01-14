@@ -611,7 +611,7 @@ sub calculate_hd_fan_duty_cycle
 sub calculate_hd_fan_duty_cycle_PID
 {
     my ($hd_max_temp, $hd_ave_temp, $old_hd_duty) = @_;
-    # my $hd_duty;
+    my $hd_duty;
     
     my $temp_error_old = $hd_ave_temp_old - $hd_ave_target;
     my $temp_error = $hd_ave_temp - $hd_ave_target;
@@ -629,8 +629,8 @@ sub calculate_hd_fan_duty_cycle_PID
         my $P = $Kp * $temp_error * 60 / $hd_polling_interval;
         my $I = $Ki * $integral;
         my $D = $Kd * $derivative;
-        # $hd_duty = $old_hd_duty + $P + $I + $D;
-        $hd_duty = $hd_duty + $P + $I + $D;
+        $hd_duty = $old_hd_duty + $P + $I + $D;
+        # $hd_duty = $hd_duty + $P + $I + $D;
 
         if ($hd_duty > $hd_fan_duty_high)
         {
