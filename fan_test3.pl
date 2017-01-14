@@ -52,8 +52,8 @@
 # 2017-01-10 Reworked get_hd_list() to exclude SSDs
 #            Added function to calculate maximum and average HD temperatures.
 #            Replaced original HD fan control scheme with a PID controller, controlling the average HD temp..
-#            Added test if any HD reaches a specified max temperature.  If so, the PID loop is overridden, and HD
-#              fans are set to 100%
+#            Added safety override if any HD reaches a specified max temperature.  If so, the PID loop is overridden, 
+#            and HD fans are set to 100%
 ###############################################################################################
 ## CONFIGURATION
 ################
@@ -76,6 +76,9 @@ $low_cpu_temp = 35;        # will go LOW when we fall below 35 again
 ## Note, it is possible for your HDs to go above this... but if your cooling is good, they shouldn't.
 $hd_ave_target = 36;  # PID control loop will target this average temperature
 $hd_max_allowed_temp = 40; # celsius. PID control aborts and fans set to 100% duty cycle when a HD hits this temp.
+                           # This ensures that no matter how poorly chosen the PID gains are, or how much of a spread
+                           # there is between the average HD temperature and the maximum HD temperature, the HD fans 
+                           # will be set to 100% if any drive reaches this temperature.
 
 ## CPU TEMP TO OVERRIDE HD FANS
 ## when the CPU climbs above this temperature, the HD fans will be overridden
@@ -96,7 +99,7 @@ $hd_cpu_override_duty_cycle = 95;  # when the HD duty cycle exceeds this value, 
 ## PID CONTROL GAINS
 $Kp = 48;
 $Ki = 0;
-$Kd = 300;
+$Kd = 240;
 
 
 #######################
