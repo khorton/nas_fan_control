@@ -125,7 +125,7 @@ $hd_fan_duty_high      = 100;    # percentage on, ie 100% is full speed.
 $hd_fan_duty_med_high  = 80;
 $hd_fan_duty_med_low   = 50;
 $hd_fan_duty_low       = 25;    # some 120mm fans stall below 30.
-$hd_fan_duty           = 70;    # HD fan duty cycle when script starts.
+$hd_fan_duty_start           = 70;    # HD fan duty cycle when script starts.
 
 ## FAN ZONES
 # Your CPU/case fans should probably be connected to the main fan sockets, which are in fan zone zero
@@ -215,7 +215,7 @@ sub main
     $hd_ave_temp_old = $hd_ave_target;
     $temp_error = 0;
     my $integral = 0;
-    my $HD_duty = $hd_fan_duty;
+    my $hd_duty = $hd_fan_duty_start;
 
     
     while()
@@ -612,7 +612,7 @@ sub calculate_hd_fan_duty_cycle
 sub calculate_hd_fan_duty_cycle_PID
 {
     my ($hd_max_temp, $hd_ave_temp, $old_hd_duty_int) = @_;
-    # my $hd_duty;
+    my $hd_duty;
     
     my $temp_error_old = $hd_ave_temp_old - $hd_ave_target;
     my $temp_error = $hd_ave_temp - $hd_ave_target;
