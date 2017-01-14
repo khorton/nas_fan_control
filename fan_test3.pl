@@ -61,7 +61,7 @@
 ## DEBUG LEVEL
 ## 0 means no debugging. 1,2,3,4 provide more verbosity
 ## You should run this script in at least level 1 to verify its working correctly on your system
-$debug = 2;
+$debug = 5;
 
 ## CPU THRESHOLD TEMPS
 ## A modern CPU can heat up from 35C to 60C in a second or two. The fan duty cycle is set based on this
@@ -83,17 +83,15 @@ $hd_max_allowed_temp = 40; # celsius. PID control aborts and fans set to 100% du
 ## sufficient cooling.
 $cpu_hd_override_temp = 62;
 
-## HD FAN DUTY CYCLE TO OVERRIDE CPU FANS
-## when the HD duty cycle exceeds this value, the CPU fans may be overridden to help cool HDs
-## The function only occurs if $cpu_fans_cool_hd = 1
-$hd_cpu_override_duty_cycle = 95;
-
 ## CPU/HD SHARED COOLING
 ## If your HD fans contribute to the cooling of your CPU you should set this value.
 ## It will mean when you CPU heats up your HD fans will be turned up to help cool the
 ## case/cpu. This would only not apply if your HDs and fans are in a separate thermal compartment.
 $hd_fans_cool_cpu = 1;      # 1 if the hd fans should spin up to cool the cpu, 0 otherwise
-$cpu_fans_cool_hd = 1;      # 1 if the cpu fans should spin up to cool the HDs, when needed.  0 otherwise
+
+## HD FAN DUTY CYCLE TO OVERRIDE CPU FANS
+$cpu_fans_cool_hd            = 1;  # 1 if the cpu fans should spin up to cool the HDs, when needed.  0 otherwise
+$hd_cpu_override_duty_cycle = 95;  # when the HD duty cycle exceeds this value, the CPU fans may be overridden to help cool HDs
 
 ## PID CONTROL GAINS
 $Kp = 48;
@@ -572,42 +570,6 @@ sub control_cpu_fan
     return $cpu_fan_level;
 }
 
-sub calculate_hd_fan_duty_cycle
-{
-    my ($hd_temp, $old_hd_duty) = @_;
-    my $hd_duty;
-
-
-    if ($hd_temp >= $hd_max_allowed_temp  ) 
-    {
-        $hd_duty = $hd_fan_duty_high;
-        dprint(0, "Drives are too hot, going to $hd_fan_duty_high%\n") unless $old_hd_duty == $hd_duty;
-     }
-    elsif ($hd_temp >= $hd_max_allowed_temp - 1 )
-    {
-        $hd_duty = $hd_fan_duty_med_high;
-            dprint(0, "Drives are warm, going to $hd_fan_duty_med_high%\n") unless $old_hd_duty == $hd_duty;
-        
-    }
-    elsif ($hd_temp >= $hd_max_allowed_temp - 2 ) 
-    {
-        $hd_duty = $hd_fan_duty_med_low;
-         dprint(0, "Drives are warming, going to $hd_fan_duty_med_low%\n") unless $old_hd_duty == $hd_duty; 
-     }
-    elsif( $hd_temp > 0 )
-    {
-        $hd_duty = $hd_fan_duty_low;
-          dprint(0, "Drives are cool enough, going to $hd_fan_duty_low%\n") unless $old_hd_duty == $hd_duty;
-    }
-    else
-    {
-        $hd_duty = 100;
-        dprint( 0, "Drive temperature ($hd_temp) invalid. going to 100%\n");
-    }
-    
-    return $hd_duty;
-}
-
 sub calculate_hd_fan_duty_cycle_PID
 {
     my ($hd_max_temp, $hd_ave_temp, $old_hd_duty) = @_;
@@ -644,7 +606,6 @@ sub calculate_hd_fan_duty_cycle_PID
         # $hd_duty is retained as float between cycles, so any small incremental adjustments less 
         # than 1 will not be lost, but build up until they are large enough to cause a change 
         # after the value is truncated with int()
-        $hd_duty_int = int($hd_duty);
 
         dprint(0, "temperature error = $temp_error\n");
         dprint(1, "PID corrections are P = $P, I = $I and D = $D\n");
@@ -667,7 +628,7 @@ sub calculate_hd_fan_duty_cycle_PID
         $cpu_min_duty_cycle_from_hds = 0;
     }
 
-    return $hd_duty_int;
+    return int($hd_duty);
 }
 
 sub build_date_string
