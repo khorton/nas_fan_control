@@ -215,6 +215,7 @@ sub main
     $hd_ave_temp_old = $hd_ave_target;
     $temp_error = 0;
     my $integral = 0;
+    my $HD_duty = $hd_fan_duty;
 
     
     while()
@@ -610,8 +611,8 @@ sub calculate_hd_fan_duty_cycle
 
 sub calculate_hd_fan_duty_cycle_PID
 {
-    my ($hd_max_temp, $hd_ave_temp, $old_hd_duty) = @_;
-    my $hd_duty;
+    my ($hd_max_temp, $hd_ave_temp, $old_hd_duty_int) = @_;
+    # my $hd_duty;
     
     my $temp_error_old = $hd_ave_temp_old - $hd_ave_target;
     my $temp_error = $hd_ave_temp - $hd_ave_target;
