@@ -215,7 +215,7 @@ sub main
     $hd_ave_temp_old = $hd_ave_target;
     $temp_error = 0;
     my $integral = 0;
-    my $hd_duty = $hd_fan_duty_start;
+    my $hd_fan_duty = $hd_fan_duty_start;
 
     
     while()
