@@ -96,7 +96,7 @@ $hd_cpu_override_duty_cycle = 95;  # when the HD duty cycle exceeds this value, 
 ## PID CONTROL GAINS
 $Kp = 48;
 $Ki = 0;
-$Kd = 200;
+$Kd = 300;
 
 
 #######################
