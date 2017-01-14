@@ -61,7 +61,7 @@
 ## DEBUG LEVEL
 ## 0 means no debugging. 1,2,3,4 provide more verbosity
 ## You should run this script in at least level 1 to verify its working correctly on your system
-$debug = 1;
+$debug = 2;
 
 ## CPU THRESHOLD TEMPS
 ## A modern CPU can heat up from 35C to 60C in a second or two. The fan duty cycle is set based on this
@@ -86,7 +86,7 @@ $cpu_hd_override_temp = 62;
 ## HD FAN DUTY CYCLE TO OVERRIDE CPU FANS
 ## when the HD duty cycle exceeds this value, the CPU fans may be overridden to help cool HDs
 ## The function only occurs if $cpu_fans_cool_hd = 1
-$hd_cpu_override_duty_cycle = 80;
+$hd_cpu_override_duty_cycle = 90;
 
 ## CPU/HD SHARED COOLING
 ## If your HD fans contribute to the cooling of your CPU you should set this value.
@@ -98,7 +98,7 @@ $cpu_fans_cool_hd = 1;      # 1 if the cpu fans should spin up to cool the HDs, 
 ## PID CONTROL GAINS
 $Kp = 16;
 $Ki = 0;
-$Kd = 150;
+$Kd = 100;
 
 
 #######################
@@ -125,7 +125,7 @@ $hd_fan_duty_high      = 100;    # percentage on, ie 100% is full speed.
 $hd_fan_duty_med_high  = 80;
 $hd_fan_duty_med_low   = 50;
 $hd_fan_duty_low       = 25;    # some 120mm fans stall below 30.
-
+$hd_fan_duty           = 70;    # HD fan duty cycle when script starts.
 
 ## FAN ZONES
 # Your CPU/case fans should probably be connected to the main fan sockets, which are in fan zone zero
@@ -212,7 +212,6 @@ sub main
     my $old_cpu_fan_level = "";
     my $override_hd_fan_level = 0;
     my $last_hd_check_time = 0;
-    $hd_fan_duty = 90;
     $hd_ave_temp_old = $hd_ave_target;
     $temp_error = 0;
     my $integral = 0;
@@ -643,7 +642,7 @@ sub calculate_hd_fan_duty_cycle_PID
 
         $hd_duty = int($hd_duty);
 
-        dprint(1, "temperature error = $temp_error\n");
+        dprint(0, "temperature error = $temp_error\n");
         dprint(1, "PID corrections are P = $P, I = $I and D = $D\n");
         dprint(0, "PID control new duty cycle is $hd_duty%\n") unless $old_hd_duty == $hd_duty;
     }
