@@ -96,7 +96,7 @@ $hd_fans_cool_cpu = 1;      # 1 if the hd fans should spin up to cool the cpu, 0
 $cpu_fans_cool_hd = 1;      # 1 if the cpu fans should spin up to cool the HDs, when needed.  0 otherwise
 
 ## PID CONTROL GAINS
-$Kp = 16;
+$Kp = 48;
 $Ki = 0;
 $Kd = 100;
 
@@ -626,7 +626,7 @@ sub calculate_hd_fan_duty_cycle_PID
         my $temp_error = $hd_ave_temp - $hd_ave_target;
         $integral += $temp_error * $hd_polling_interval / 60;
         my $derivative = ($temp_error - $temp_error_old) * 60 / $hd_polling_interval;
-        my $P = $Kp * $temp_error;
+        my $P = $Kp * $temp_error * 60 / $hd_polling_interval;
         my $I = $Ki * $integral;
         my $D = $Kd * $derivative;
         $hd_duty = $old_hd_duty + $P + $I + $D;
@@ -640,6 +640,9 @@ sub calculate_hd_fan_duty_cycle_PID
             $hd_duty = $hd_fan_duty_low;
         }
 
+        # $hd_duty is retained as float between cycles, so any small incremental adjustments less 
+        # than 1 will not be lost, but build up until they are large enough to cause a change 
+        # after the value is truncated with int()
         $hd_duty_int = int($hd_duty);
 
         dprint(0, "temperature error = $temp_error\n");
