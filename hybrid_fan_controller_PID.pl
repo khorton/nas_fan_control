@@ -86,7 +86,7 @@ $cpu_hd_override_temp = 62;
 ## HD FAN DUTY CYCLE TO OVERRIDE CPU FANS
 ## when the HD duty cycle exceeds this value, the CPU fans may be overridden to help cool HDs
 ## The function only occurs if $cpu_fans_cool_hd = 1
-$hd_cpu_override_duty_cycle = 90;
+$hd_cpu_override_duty_cycle = 95;
 
 ## CPU/HD SHARED COOLING
 ## If your HD fans contribute to the cooling of your CPU you should set this value.
@@ -98,7 +98,7 @@ $cpu_fans_cool_hd = 1;      # 1 if the cpu fans should spin up to cool the HDs, 
 ## PID CONTROL GAINS
 $Kp = 48;
 $Ki = 0;
-$Kd = 100;
+$Kd = 120;
 
 
 #######################
