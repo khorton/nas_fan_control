@@ -98,7 +98,7 @@ $cpu_fans_cool_hd = 1;      # 1 if the cpu fans should spin up to cool the HDs, 
 ## PID CONTROL GAINS
 $Kp = 48;
 $Ki = 0;
-$Kd = 150;
+$Kd = 200;
 
 
 #######################
