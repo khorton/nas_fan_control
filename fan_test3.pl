@@ -629,7 +629,8 @@ sub calculate_hd_fan_duty_cycle_PID
         my $P = $Kp * $temp_error * 60 / $hd_polling_interval;
         my $I = $Ki * $integral;
         my $D = $Kd * $derivative;
-        $hd_duty = $old_hd_duty + $P + $I + $D;
+        # $hd_duty = $old_hd_duty + $P + $I + $D;
+        $hd_duty = $hd_duty + $P + $I + $D;
 
         if ($hd_duty > $hd_fan_duty_high)
         {
