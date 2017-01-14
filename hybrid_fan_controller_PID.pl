@@ -640,7 +640,7 @@ sub calculate_hd_fan_duty_cycle_PID
             $hd_duty = $hd_fan_duty_low;
         }
 
-        $hd_duty = int($hd_duty);
+        $hd_duty_int = int($hd_duty);
 
         dprint(0, "temperature error = $temp_error\n");
         dprint(1, "PID corrections are P = $P, I = $I and D = $D\n");
@@ -663,7 +663,7 @@ sub calculate_hd_fan_duty_cycle_PID
         $cpu_min_duty_cycle_from_hds = 0;
     }
 
-    return $hd_duty;
+    return $hd_duty_int;
 }
 
 sub build_date_string
