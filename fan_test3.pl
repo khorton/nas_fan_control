@@ -98,7 +98,7 @@ $cpu_fans_cool_hd = 1;      # 1 if the cpu fans should spin up to cool the HDs, 
 ## PID CONTROL GAINS
 $Kp = 48;
 $Ki = 0;
-$Kd = 120;
+$Kd = 150;
 
 
 #######################
@@ -611,7 +611,7 @@ sub calculate_hd_fan_duty_cycle
 sub calculate_hd_fan_duty_cycle_PID
 {
     my ($hd_max_temp, $hd_ave_temp, $old_hd_duty) = @_;
-    my $hd_duty;
+    # my $hd_duty;
     
     my $temp_error_old = $hd_ave_temp_old - $hd_ave_target;
     my $temp_error = $hd_ave_temp - $hd_ave_target;
