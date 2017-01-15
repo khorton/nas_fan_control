@@ -4,7 +4,7 @@ $ipmitool = "/usr/local/bin/ipmitool";
 
 $n = 80;
 
-while( n > 24){
+while( $n > 24){
     set_fan_zone_duty_cycle(0,$n);
     set_fan_zone_duty_cycle(1,$n);
     sleep 10;
