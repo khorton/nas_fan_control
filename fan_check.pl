@@ -4,7 +4,7 @@ $ipmitool = "/usr/local/bin/ipmitool";
 
 $n = 25;
 
-while( $n < 100){
+while( $n < 101){
     set_fan_zone_duty_cycle(0,$n);
     set_fan_zone_duty_cycle(1,$n);
     sleep 10;
@@ -12,6 +12,16 @@ while( $n < 100){
     print "$n   $ave_fan_speed\n";
     $n +=1;
 }
+
+while( $n > 75){
+    set_fan_zone_duty_cycle(0,$n);
+    set_fan_zone_duty_cycle(1,$n);
+    sleep 10;
+    $ave_fan_speed = ( get_fan_speed('FAN1') + get_fan_speed('FAN2') + get_fan_speed('FAN4') + get_fan_speed('FAN5') + get_fan_speed('FANA') + get_fan_speed('FANB') + get_fan_speed('FANC') ) / 7;
+    print "$n   $ave_fan_speed\n";
+    $n -=1;
+}
+
 
 sub get_fan_speed
 {
