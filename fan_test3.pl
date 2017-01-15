@@ -97,7 +97,7 @@ $cpu_fans_cool_hd            = 1;  # 1 if the cpu fans should spin up to cool th
 $hd_cpu_override_duty_cycle = 95;  # when the HD duty cycle exceeds this value, the CPU fans may be overridden to help cool HDs
 
 ## PID CONTROL GAINS
-$Kp = 5.33;
+$Kp = 8;
 $Ki = 0;
 $Kd = 150;
 
