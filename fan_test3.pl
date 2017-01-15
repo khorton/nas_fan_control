@@ -99,7 +99,7 @@ $hd_cpu_override_duty_cycle = 95;  # when the HD duty cycle exceeds this value, 
 ## PID CONTROL GAINS
 $Kp = 5.33;
 $Ki = 0;
-$Kd = 200;
+$Kd = 150;
 
 
 #######################
@@ -631,8 +631,8 @@ sub calculate_hd_fan_duty_cycle_PID
     {
         $cpu_min_duty_cycle_from_hds = 0;
     }
-
-    return int($hd_duty);
+    # add 0.5 before truncating with int() to approximate the behaviour of a proper round() function
+    return int($hd_duty + 0.5);
 }
 
 sub build_date_string
