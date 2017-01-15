@@ -49,11 +49,13 @@
 #            responsiveness of the get_cpu_temp function
 #
 # The following changes are by Kevin Horton
-# 2017-01-10 Reworked get_hd_list() to exclude SSDs
+# 2017-01-14 Reworked get_hd_list() to exclude SSDs
 #            Added function to calculate maximum and average HD temperatures.
 #            Replaced original HD fan control scheme with a PID controller, controlling the average HD temp..
 #            Added safety override if any HD reaches a specified max temperature.  If so, the PID loop is overridden, 
 #            and HD fans are set to 100%
+#            Retain float value of fan duty cycle between loop cycles, so that small duty cycle corrections 
+#            accumulate and eventually push the duty cycle to the next integer value.
 ###############################################################################################
 ## CONFIGURATION
 ################
@@ -607,10 +609,6 @@ sub calculate_hd_fan_duty_cycle_PID
             $hd_duty = $hd_fan_duty_low;
         }
 
-        # $hd_duty is retained as float between cycles, so any small incremental adjustments less 
-        # than 1 will not be lost, but build up until they are large enough to cause a change 
-        # after the value is truncated with int()
-
         dprint(0, "temperature error = $temp_error\n");
         dprint(1, "PID corrections are P = $P, I = $I and D = $D\n");
         dprint(0, "PID control new duty cycle is $hd_duty%\n") unless $old_hd_duty == $hd_duty;
@@ -631,6 +629,10 @@ sub calculate_hd_fan_duty_cycle_PID
     {
         $cpu_min_duty_cycle_from_hds = 0;
     }
+    # $hd_duty is retained as float between cycles, so any small incremental adjustments less 
+    # than 1 will not be lost, but build up until they are large enough to cause a change 
+    # after the value is truncated with int()
+
     # add 0.5 before truncating with int() to approximate the behaviour of a proper round() function
     return int($hd_duty + 0.5);
 }
