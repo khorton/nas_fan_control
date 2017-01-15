@@ -10,7 +10,7 @@ while( $n > 24){
     sleep 10;
     $ave_fan_speed = ( get_fan_speed('FAN1') + get_fan_speed('FAN2') + get_fan_speed('FAN4') + get_fan_speed('FAN5') + get_fan_speed('FANA') + get_fan_speed('FANB') + get_fan_speed('FANC') ) / 7;
     print "$n   $ave_fan_speed\n";
-    $n -+1;
+    $n -=1;
 }
 
 sub get_fan_speed
