@@ -49,11 +49,13 @@
 #            responsiveness of the get_cpu_temp function
 #
 # The following changes are by Kevin Horton
-# 2017-01-10 Reworked get_hd_list() to exclude SSDs
+# 2017-01-14 Reworked get_hd_list() to exclude SSDs
 #            Added function to calculate maximum and average HD temperatures.
 #            Replaced original HD fan control scheme with a PID controller, controlling the average HD temp..
-#            Added test if any HD reaches a specified max temperature.  If so, the PID loop is overridden, and HD
-#              fans are set to 100%
+#            Added safety override if any HD reaches a specified max temperature.  If so, the PID loop is overridden, 
+#            and HD fans are set to 100%
+#            Retain float value of fan duty cycle between loop cycles, so that small duty cycle corrections 
+#            accumulate and eventually push the duty cycle to the next integer value.
 ###############################################################################################
 ## CONFIGURATION
 ################
@@ -61,7 +63,7 @@
 ## DEBUG LEVEL
 ## 0 means no debugging. 1,2,3,4 provide more verbosity
 ## You should run this script in at least level 1 to verify its working correctly on your system
-$debug = 2;
+$debug = 0;
 
 ## CPU THRESHOLD TEMPS
 ## A modern CPU can heat up from 35C to 60C in a second or two. The fan duty cycle is set based on this
@@ -76,6 +78,9 @@ $low_cpu_temp = 35;        # will go LOW when we fall below 35 again
 ## Note, it is possible for your HDs to go above this... but if your cooling is good, they shouldn't.
 $hd_ave_target = 36;  # PID control loop will target this average temperature
 $hd_max_allowed_temp = 40; # celsius. PID control aborts and fans set to 100% duty cycle when a HD hits this temp.
+                           # This ensures that no matter how poorly chosen the PID gains are, or how much of a spread
+                           # there is between the average HD temperature and the maximum HD temperature, the HD fans 
+                           # will be set to 100% if any drive reaches this temperature.
 
 ## CPU TEMP TO OVERRIDE HD FANS
 ## when the CPU climbs above this temperature, the HD fans will be overridden
@@ -83,22 +88,20 @@ $hd_max_allowed_temp = 40; # celsius. PID control aborts and fans set to 100% du
 ## sufficient cooling.
 $cpu_hd_override_temp = 62;
 
-## HD FAN DUTY CYCLE TO OVERRIDE CPU FANS
-## when the HD duty cycle exceeds this value, the CPU fans may be overridden to help cool HDs
-## The function only occurs if $cpu_fans_cool_hd = 1
-$hd_cpu_override_duty_cycle = 95;
-
 ## CPU/HD SHARED COOLING
 ## If your HD fans contribute to the cooling of your CPU you should set this value.
 ## It will mean when you CPU heats up your HD fans will be turned up to help cool the
 ## case/cpu. This would only not apply if your HDs and fans are in a separate thermal compartment.
 $hd_fans_cool_cpu = 1;      # 1 if the hd fans should spin up to cool the cpu, 0 otherwise
-$cpu_fans_cool_hd = 1;      # 1 if the cpu fans should spin up to cool the HDs, when needed.  0 otherwise
+
+## HD FAN DUTY CYCLE TO OVERRIDE CPU FANS
+$cpu_fans_cool_hd            = 1;  # 1 if the cpu fans should spin up to cool the HDs, when needed.  0 otherwise
+$hd_cpu_override_duty_cycle = 95;  # when the HD duty cycle exceeds this value, the CPU fans may be overridden to help cool HDs
 
 ## PID CONTROL GAINS
-$Kp = 48;
+$Kp = 5.333;
 $Ki = 0;
-$Kd = 150;
+$Kd = 120;
 
 
 #######################
@@ -125,7 +128,7 @@ $hd_fan_duty_high      = 100;    # percentage on, ie 100% is full speed.
 $hd_fan_duty_med_high  = 80;
 $hd_fan_duty_med_low   = 50;
 $hd_fan_duty_low       = 25;    # some 120mm fans stall below 30.
-$hd_fan_duty_start           = 70;    # HD fan duty cycle when script starts.
+$hd_fan_duty           = 70;    # HD fan duty cycle when script starts.
 
 ## FAN ZONES
 # Your CPU/case fans should probably be connected to the main fan sockets, which are in fan zone zero
@@ -158,7 +161,7 @@ $ipmitool = "/usr/local/bin/ipmitool";
 ## HD POLLING INTERVAL
 ## The controller will only poll the harddrives periodically. Since hard drives change temperature slowly
 ## this is a good thing. 180 seconds is a good value.
-$hd_polling_interval = 180;    # seconds
+$hd_polling_interval = 90;    # seconds
 
 ## FAN SPEED CHANGE DELAY TIME
 ## It takes the fans a few seconds to change speeds, we allow a grace before verifying. If we fail the verify
@@ -187,6 +190,7 @@ $cpu_max_fan_speed *= 0.8;
 $hd_max_fan_speed *= 0.8;
 $cpu_hd_fan_speed = $cpu_max_fan_speed * 0.64;
 
+$hd_duty = $hd_fan_duty;
 
 #fan/bmc verification globals/timers
 $last_fan_level_change_time = 0;        # the time when we changed a fan level last
@@ -215,7 +219,6 @@ sub main
     $hd_ave_temp_old = $hd_ave_target;
     $temp_error = 0;
     my $integral = 0;
-    my $hd_fan_duty = $hd_fan_duty_start;
 
     
     while()
@@ -573,46 +576,10 @@ sub control_cpu_fan
     return $cpu_fan_level;
 }
 
-sub calculate_hd_fan_duty_cycle
-{
-    my ($hd_temp, $old_hd_duty) = @_;
-    my $hd_duty;
-
-
-    if ($hd_temp >= $hd_max_allowed_temp  ) 
-    {
-        $hd_duty = $hd_fan_duty_high;
-        dprint(0, "Drives are too hot, going to $hd_fan_duty_high%\n") unless $old_hd_duty == $hd_duty;
-     }
-    elsif ($hd_temp >= $hd_max_allowed_temp - 1 )
-    {
-        $hd_duty = $hd_fan_duty_med_high;
-            dprint(0, "Drives are warm, going to $hd_fan_duty_med_high%\n") unless $old_hd_duty == $hd_duty;
-        
-    }
-    elsif ($hd_temp >= $hd_max_allowed_temp - 2 ) 
-    {
-        $hd_duty = $hd_fan_duty_med_low;
-         dprint(0, "Drives are warming, going to $hd_fan_duty_med_low%\n") unless $old_hd_duty == $hd_duty; 
-     }
-    elsif( $hd_temp > 0 )
-    {
-        $hd_duty = $hd_fan_duty_low;
-          dprint(0, "Drives are cool enough, going to $hd_fan_duty_low%\n") unless $old_hd_duty == $hd_duty;
-    }
-    else
-    {
-        $hd_duty = 100;
-        dprint( 0, "Drive temperature ($hd_temp) invalid. going to 100%\n");
-    }
-    
-    return $hd_duty;
-}
-
 sub calculate_hd_fan_duty_cycle_PID
 {
-    my ($hd_max_temp, $hd_ave_temp, $old_hd_duty_int) = @_;
-    my $hd_duty;
+    my ($hd_max_temp, $hd_ave_temp, $old_hd_duty) = @_;
+    # my $hd_duty;
     
     my $temp_error_old = $hd_ave_temp_old - $hd_ave_target;
     my $temp_error = $hd_ave_temp - $hd_ave_target;
@@ -627,10 +594,11 @@ sub calculate_hd_fan_duty_cycle_PID
         my $temp_error = $hd_ave_temp - $hd_ave_target;
         $integral += $temp_error * $hd_polling_interval / 60;
         my $derivative = ($temp_error - $temp_error_old) * 60 / $hd_polling_interval;
-        my $P = $Kp * $temp_error * 60 / $hd_polling_interval;
+        my $P = $Kp * $temp_error * $hd_polling_interval / 60;
         my $I = $Ki * $integral;
         my $D = $Kd * $derivative;
-        $hd_duty = $old_hd_duty + $P + $I + $D;
+        # $hd_duty = $old_hd_duty + $P + $I + $D;
+        $hd_duty = $hd_duty + $P + $I + $D;
 
         if ($hd_duty > $hd_fan_duty_high)
         {
@@ -640,11 +608,6 @@ sub calculate_hd_fan_duty_cycle_PID
         {
             $hd_duty = $hd_fan_duty_low;
         }
-
-        # $hd_duty is retained as float between cycles, so any small incremental adjustments less 
-        # than 1 will not be lost, but build up until they are large enough to cause a change 
-        # after the value is truncated with int()
-        $hd_duty_int = int($hd_duty);
 
         dprint(0, "temperature error = $temp_error\n");
         dprint(1, "PID corrections are P = $P, I = $I and D = $D\n");
@@ -666,8 +629,12 @@ sub calculate_hd_fan_duty_cycle_PID
     {
         $cpu_min_duty_cycle_from_hds = 0;
     }
+    # $hd_duty is retained as float between cycles, so any small incremental adjustments less 
+    # than 1 will not be lost, but build up until they are large enough to cause a change 
+    # after the value is truncated with int()
 
-    return $hd_duty_int;
+    # add 0.5 before truncating with int() to approximate the behaviour of a proper round() function
+    return int($hd_duty + 0.5);
 }
 
 sub build_date_string
@@ -972,4 +939,3 @@ sub reset_bmc
     
     return;
 }
-
