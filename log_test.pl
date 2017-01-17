@@ -13,6 +13,7 @@ my $last_hd_check_time = 0;
 $log = '/root/fan_control.log';
 
 use POSIX qw(strftime);
+use Time::HiRes qw(usleep nanosleep);
 
 
 main();
@@ -37,7 +38,7 @@ sub main
             my $timestring = build_time_string();
             print "$timestring\n";
         }
-
+        usleep(14500);
     }
 }
 
