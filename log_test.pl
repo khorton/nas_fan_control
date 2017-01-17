@@ -157,7 +157,7 @@ sub print_header
     {
         printf("%5s", $item)
     }
-    print "  MaxT  AveT Terr  Mode  RPM  Duty  CPUT   P   I   D\n"
+    print "  MaxT  AveT Terr  Mode  RPM  Duty  CPUT   P   I   D\n";
     
     return @hd_list;
 }
