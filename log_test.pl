@@ -27,7 +27,7 @@ sub main
         my $check_time = time;
         if( $check_time - $last_hd_check_time >= $hd_polling_interval )
         {
-            @last_hd_list = @hd_list
+            @last_hd_list = @hd_list;
             $last_hd_check_time = $check_time;
             @hd_list = get_hd_list();
             if (@hd_list != @last_hd_list)
