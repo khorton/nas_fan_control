@@ -21,6 +21,8 @@ sub main
     {
         printf("%5s", $item)
     }
+    
+    print "MaxT  AveT Terr  Mode  RPM  Duty  CPUT   P   I   D\n"
 }
 
 sub get_hd_list
