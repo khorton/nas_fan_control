@@ -19,7 +19,7 @@ sub main
     print "$timestring";
     foreach $item (@hd_list)
     {
-        printf("  %5s", $item)
+        printf("%5s", $item)
     }
 }
 
