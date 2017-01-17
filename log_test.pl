@@ -2,6 +2,10 @@
 
 # logging test
 
+$Kp = 5.333;
+$Ki = 0;
+$Kd = 120;
+$hd_ave_target = 36;
 
 $log = '/root/fan_control.log';
 
@@ -12,17 +16,18 @@ main();
 
 sub main
 {
+    # Print Log Header
     @hd_list = get_hd_list();
     my $timestring = build_time_string();
     my $datestring = build_date_string();
-    print "$datestring\n";
+    print "$datestring  ---  Target HD Temperature = $hd_ave_target  ---  Kp = $Kp, Ki = $Ki, Kd = $Kd\n";
     print "$timestring";
     foreach $item (@hd_list)
     {
         printf("%5s", $item)
     }
     
-    print "MaxT  AveT Terr  Mode  RPM  Duty  CPUT   P   I   D\n"
+    print "  MaxT  AveT Terr  Mode  RPM  Duty  CPUT   P   I   D\n"
 }
 
 sub get_hd_list
