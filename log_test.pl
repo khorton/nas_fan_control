@@ -26,7 +26,6 @@ sub main
 sub get_hd_list
 {
     my $disk_list = `camcontrol devlist | grep -v "SSD" | sed 's:.*(::;s:).*::;s:,pass[0-9]*::;s:pass[0-9]*,::' | egrep '^[a]*da[0-9]+\$' | tr '\012' ' '`;
-    dprint(3,"$disk_list\n");
 
     my @vals = split(" ", $disk_list);
     
