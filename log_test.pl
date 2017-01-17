@@ -38,7 +38,7 @@ sub main
             my $timestring = build_time_string();
             print "$timestring\n";
         }
-        usleep(14500);
+        usleep(145000);
     }
 }
 
