@@ -6,6 +6,9 @@ $Kp = 5.333;
 $Ki = 0;
 $Kd = 120;
 $hd_ave_target = 36;
+$hd_polling_interval = 10;
+
+my $last_hd_check_time = 0;
 
 $log = '/root/fan_control.log';
 
@@ -17,17 +20,25 @@ main();
 sub main
 {
     # Print Log Header
-    @hd_list = get_hd_list();
-    my $timestring = build_time_string();
-    my $datestring = build_date_string();
-    print "$datestring  ---  Target HD Temperature = $hd_ave_target  ---  Kp = $Kp, Ki = $Ki, Kd = $Kd\n";
-    print "$timestring";
-    foreach $item (@hd_list)
-    {
-        printf("%5s", $item)
-    }
+    @hd_list = print_header();
     
-    print "  MaxT  AveT Terr  Mode  RPM  Duty  CPUT   P   I   D\n"
+    while()
+    {
+        my $check_time = time;
+        if( $check_time - $last_hd_check_time >= $hd_polling_interval )
+        {
+            @last_hd_list = @hd_list
+            $last_hd_check_time = $check_time;
+            @hd_list = get_hd_list();
+            if (@hd_list != @last_hd_list)
+            {
+                @hd_list = print_header();
+            }
+            my $timestring = build_time_string();
+            print "$timestring\n";
+        }
+
+    }
 }
 
 sub get_hd_list
@@ -133,4 +144,20 @@ sub build_time_string
     my $timestring = strftime "%H:%M:%S", localtime;
     
     return $timestring;
+}
+
+sub print_header
+{
+    @hd_list = get_hd_list();
+    my $timestring = build_time_string();
+    my $datestring = build_date_string();
+    print "$datestring  ---  Target HD Temperature = $hd_ave_target  ---  Kp = $Kp, Ki = $Ki, Kd = $Kd\n";
+    print "$timestring";
+    foreach $item (@hd_list)
+    {
+        printf("%5s", $item)
+    }
+    print "  MaxT  AveT Terr  Mode  RPM  Duty  CPUT   P   I   D\n"
+    
+    return @hd_list;
 }
