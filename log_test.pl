@@ -8,6 +8,7 @@ $Kd = 120;
 $hd_ave_target = 36;
 $hd_polling_interval = 10;
 $log = '/root/fan_control2.log';
+@hd_fan_list = ("FANA", "FANB", "FANC");
 
 $sleep_duration = ($hd_polling_interval * 1000000) - 100000;
 my $last_hd_check_time = 0;
@@ -15,7 +16,8 @@ my @hd_list = ();
 my $hd_max_temp = 0;
 my $hd_ave_temp = 0;
 my @hd_temps = ();
-
+my $hd_fan_mode = "";
+my $ave_fan_speed = 0;
 
 use POSIX qw(strftime);
 use Time::HiRes qw(usleep nanosleep);
@@ -54,7 +56,16 @@ sub main
             }
             printf(LOG "%5s", $hd_max_temp);
             printf(LOG "%6s", $hd_ave_temp);
-            printf(LOG "%6.2f\n", $hd_ave_temp - $hd_ave_target);
+            printf(LOG "%6.2f", $hd_ave_temp - $hd_ave_target);
+            
+            my $m = get_fan_mode_code();
+            if ($m == 1) { $hd_fan_mode = "Full"; }
+            elsif ($m == 0) { $hd_fan_mode = " Std"; }
+            elsif ($m == 2) { $hd_fan_mode = " Opt"; }
+            elsif ($m == 4) { $hd_fan_mode = " Hvy"; }
+            printf(LOG "%6s", $hd_fan_mode);
+            $ave_fan_speed = get_fan_ave_speed(@hd_fan_list);
+            printf(LOG "%6s\n", $ave_fan_speed)
         }
     }
 }
@@ -129,29 +140,6 @@ sub get_hd_temps
     return ($max_temp, $ave_temp, @temp_list);
 }
 
-sub get_cpu_temp_sysctl
-{
-    # significantly more efficient to filter to dev.cpu than to just grep the whole lot!
-    my $core_temps = `sysctl -a dev.cpu | egrep -E \"dev.cpu\.[0-9]+\.temperature\" | awk '{print \$2}' | sed 's/.\$//'`;
-    chomp($core_temps);
-
-    my @core_temps_list = split(" ", $core_temps);
-    
-    my $max_core_temp = 0;
-    
-    foreach my $core_temp (@core_temps_list)
-    {
-        if( $core_temp )
-        {
-            $max_core_temp = $core_temp if $core_temp > $max_core_temp;
-        }
-    }
-
-    $last_cpu_temp = $max_core_temp; #possible that this is 0 if there was a fault reading the core temps
-
-    return $max_core_temp;
-}
-
 sub build_date_string
 {
     my $datestring = strftime "%F", localtime;
@@ -181,3 +169,102 @@ sub print_header
     
     return @hd_list;
 }
+
+sub get_fan_ave_speed
+{
+    my $speed_sum = 0;
+    my $fan_count = 0;
+    foreach my $fan (@_)
+    {
+        $speed_sum += get_fan_speed(($fan));
+        $fan_count += 1;
+    }
+    
+    my $ave_speed = sprintf("%1", $speed_sum / $fan_count);
+    
+    return $ave_speed;
+}
+
+#unmodded
+
+sub get_fan_speed
+{
+    my ($fan_name) = @_;
+    
+    my $fan = get_fan_header_by_name( $fan_name );
+
+    my $command = "$ipmitool sdr | grep $fan";
+    #dprint( 4, "get fan speed command = $command\n");
+
+     my $output = `$command`;
+      my @vals = split(" ", $output);
+      my $fan_speed = "$vals[2]";
+
+    #dprint( 3, "fan_speed = $fan_speed\n");
+
+
+    if( $fan_speed eq "no" )
+    {
+        #dprint( 0, "$fan_name Fan speed: No reading\n");
+        $fan_speed = -1;
+    }
+    elsif( $fan_speed eq "disabled" )
+    {
+        #dprint( 0, "$fan_name Fan speed: Disabled\n");
+        $fan_speed = -1;
+
+    }
+    elsif( $fan_speed > 10000 || $fan_speed < 0 )
+    {
+        #dprint( 0, "$fan_name Fan speed: $fan_speed RPM, is nonsensical\n");
+        $fan_speed = -1;
+    }
+    else    
+    {
+        #dprint( 1, "$fan_name Fan speed: $fan_speed RPM\n");
+    }
+    
+    return $fan_speed;
+}
+
+
+sub get_fan_mode_code
+{
+    my ( $fan_mode )  = @_;
+    my $m;
+
+    if(     $fan_mode eq    'standard' )    { $m = 0; }
+    elsif(    $fan_mode eq    'full' )     { $m = 1; }
+    elsif(    $fan_mode eq    'optimal' )     { $m = 2; }
+    elsif(    $fan_mode eq    'heavyio' )    { $m = 4; }
+    else                     { die "illegal fan mode: $fan_mode\n" }
+
+    dprint( 3, "fanmode: $fan_mode = $m\n"); 
+
+    return $m;
+}
+
+sub get_cpu_temp_sysctl
+{
+    # significantly more efficient to filter to dev.cpu than to just grep the whole lot!
+    my $core_temps = `sysctl -a dev.cpu | egrep -E \"dev.cpu\.[0-9]+\.temperature\" | awk '{print \$2}' | sed 's/.\$//'`;
+    chomp($core_temps);
+
+    my @core_temps_list = split(" ", $core_temps);
+    
+    my $max_core_temp = 0;
+    
+    foreach my $core_temp (@core_temps_list)
+    {
+        if( $core_temp )
+        {
+            $max_core_temp = $core_temp if $core_temp > $max_core_temp;
+        }
+    }
+
+    $last_cpu_temp = $max_core_temp; #possible that this is 0 if there was a fault reading the core temps
+
+    return $max_core_temp;
+}
+
+
