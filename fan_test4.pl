@@ -65,6 +65,9 @@
 ## You should run this script in at least level 1 to verify its working correctly on your system
 $debug = 0;
 
+## LOG
+$log = '/root/fan_control2.log';
+
 ## CPU THRESHOLD TEMPS
 ## A modern CPU can heat up from 35C to 60C in a second or two. The fan duty cycle is set based on this
 $high_cpu_temp = 55;       # will go HIGH when we hit
@@ -145,8 +148,9 @@ $hd_fan_zone  = 1;
 ## these are the fan headers which are used to verify the fan zone is high. FAN1+ are all in Zone 0, FANA is Zone 1.
 ## cpu_fan_header should be in the cpu_fan_zone
 ## hd_fan_header should be in the hd_fan_zone
-$cpu_fan_header = "FAN2";    
-$hd_fan_header  = "FANB";
+$cpu_fan_header = "FAN2";                 # used for printing to standard output for debugging   
+$hd_fan_header  = "FANB";                 # used for printing to standard output for debugging   
+@hd_fan_list = ("FANA", "FANB", "FANC");  # used for logging to file  
 
 
 
@@ -209,6 +213,12 @@ main();
 
 sub main
 {
+    open LOG, ">", $log or die $!;
+    
+    # Print Log Header
+    @hd_list = get_hd_list();
+    print_header(@hd_list);
+    
     # need to go to Full mode so we have unfettered control of Fans
     set_fan_mode("full");
     
@@ -260,13 +270,14 @@ sub main
         if( $check_time - $last_hd_check_time > $hd_polling_interval )
         {
             $last_hd_check_time = $check_time;
+            @last_hd_list = @hd_list;
     
             # we refresh the hd_list from camcontrol devlist
             # everytime because if you're adding/removing HDs we want
             # starting checking their temps too!
             @hd_list = get_hd_list();
             
-            my ($hd_max_temp, $hd_ave_temp) = get_hd_max_ave_temp();
+            my ($hd_max_temp, $hd_ave_temp, @hd_temps) = get_hd_temps();
             $hd_fan_duty = calculate_hd_fan_duty_cycle_PID( $hd_max_temp, $hd_ave_temp, $hd_fan_duty );
             
             if( !$override_hd_fan_level )
@@ -274,7 +285,33 @@ sub main
                 set_fan_zone_duty_cycle( $hd_fan_zone, $hd_fan_duty );
 
                 $last_fan_level_change_time = time; # this resets every time, but it shouldn't matter since hd_polling_interval is large.
+            # 
             }
+            # print to log
+            if (@hd_list != @last_hd_list)
+            {
+                # print new disk iD header if it has changed (e.g. hot swap insert or remove)
+                @hd_list = print_header(@hd_list);
+            }
+            my $timestring = build_time_string();
+            ($hd_max_temp, $hd_ave_temp, @hd_temps) = get_hd_temps();
+            print LOG "$timestring";
+            foreach my $item (@hd_temps)
+            {
+                printf(LOG "%5s", $item);
+            }
+            printf(LOG "  ^%2i", $hd_max_temp);
+            printf(LOG " %6.2f", $hd_ave_temp);
+            printf(LOG "%6.2f", $hd_ave_temp - $hd_ave_target);
+            
+            $hd_fan_mode = get_fan_mode();
+            printf(LOG "%6s", $hd_fan_mode);
+            $ave_fan_speed = get_fan_ave_speed(@hd_fan_list);
+            printf(LOG "%6s", $ave_fan_speed);
+            printf(LOG "%5i", $hd_fan_duty);
+            
+            $cput = get_cpu_temp_sysctl();
+            printf(LOG "%6i  %+5.1f  %+5.1f  %+5.1f\n", $cput, $P, $I, $D);
         }
         
         # verify_fan_speed_levels function is fairly complicated        
@@ -336,23 +373,61 @@ sub get_hd_temp
     return $max_temp;
 }
 
-sub get_hd_max_ave_temp
-# return maximum and average HD temperatures
+# sub get_hd_max_ave_temp
+# # return maximum and average HD temperatures
+# {
+#     my $max_temp = 0;
+#     my $temp_sum = 0;
+#     my $HD_count = 0;
+# 
+#     foreach my $item (@hd_list)
+#     {
+#         my $disk_dev = "/dev/$item";
+#         my $command = "/usr/local/sbin/smartctl -A $disk_dev | grep Temperature_Celsius";
+# 
+#         dprint( 3, "$command\n" );
+# 
+#         my $output = `$command`;
+# 
+#         dprint( 2, "$output");
+# 
+#         my @vals = split(" ", $output);
+# 
+#         # grab 10th item from the output, which is the hard drive temperature (on Seagate NAS HDs)
+#         my $temp = "$vals[9]";
+#         chomp $temp;
+# 
+#         if( $temp )
+#         {
+#             dprint( 1, "$disk_dev: $temp\n");
+#             $temp_sum += $temp;
+#             $HD_count +=1;
+#             $max_temp = $temp if $temp > $max_temp;
+#         }
+#     }
+# 
+#     my $ave_temp = $temp_sum / $HD_count;
+# 
+#     dprint(0, "Average HD Temperature: $ave_temp\n");
+# 
+# 
+#     return ($max_temp, $ave_temp);
+# }
+
+sub get_hd_temps
+# return maximum, average HD temperatures and array of individual temps
 {
     my $max_temp = 0;
     my $temp_sum = 0;
     my $HD_count = 0;
+    my @temp_list = ();
 
     foreach my $item (@hd_list)
     {
         my $disk_dev = "/dev/$item";
         my $command = "/usr/local/sbin/smartctl -A $disk_dev | grep Temperature_Celsius";
 
-        dprint( 3, "$command\n" );
-
         my $output = `$command`;
-
-        dprint( 2, "$output");
 
         my @vals = split(" ", $output);
 
@@ -362,7 +437,7 @@ sub get_hd_max_ave_temp
 
         if( $temp )
         {
-            dprint( 1, "$disk_dev: $temp\n");
+            push(@temp_list, $temp);
             $temp_sum += $temp;
             $HD_count +=1;
             $max_temp = $temp if $temp > $max_temp;
@@ -371,11 +446,9 @@ sub get_hd_max_ave_temp
 
     my $ave_temp = $temp_sum / $HD_count;
 
-    dprint(0, "Average HD Temperature: $ave_temp\n");
-
-
-    return ($max_temp, $ave_temp);
+    return ($max_temp, $ave_temp, @temp_list);
 }
+
 
 ###########################
 # verify_fan_speed_levels() 
@@ -637,11 +710,61 @@ sub calculate_hd_fan_duty_cycle_PID
     return int($hd_duty + 0.5);
 }
 
+# sub build_date_string
+# {
+#     my $datestring = strftime "%F %H:%M:%S", localtime;
+#     
+#     return $datestring;
+# }
+
 sub build_date_string
 {
-    my $datestring = strftime "%F %H:%M:%S", localtime;
+    my $datestring = strftime "%F", localtime;
     
     return $datestring;
+}
+
+sub build_time_string
+{
+    my $timestring = strftime "%H:%M:%S", localtime;
+    
+    return $timestring;
+}
+
+sub print_log_header
+{
+    @hd_list = @_;
+    my $timestring = build_time_string();
+    my $datestring = build_date_string();
+    print LOG "PID Fan Controller Log  ---  Target HD Temperature = $hd_ave_target  ---  Kp = $Kp, Ki = $Ki, Kd = $Kd\n         ";
+    foreach $item (@hd_list)
+    {
+        print LOG "     ";
+    }
+    print LOG "  Max   Ave  Temp   Fan   Fan   Fan   CPU   P      I      D\n$datestring";
+    
+    foreach $item (@hd_list)
+    {
+        printf(LOG "%4s ", $item);
+    }
+    print LOG "Temp  Temp   Err  Mode   RPM  Duty  Temp Corr   Corr   Corr\n";
+    
+    return @hd_list;
+}
+
+sub get_fan_ave_speed
+{
+    my $speed_sum = 0;
+    my $fan_count = 0;
+    foreach my $fan (@_)
+    {
+        $speed_sum += get_fan_speed2($fan);
+        $fan_count += 1;
+    }
+    
+    my $ave_speed = sprintf("%i", $speed_sum / $fan_count);
+    
+    return $ave_speed;
 }
 
 sub dprint
@@ -683,6 +806,18 @@ sub bail_with_fans_full
     die @_;
 }
 
+sub get_fan_mode
+{
+    my $command = "$ipmitool raw 0x30 0x45 0";
+    my $fan_code = `$command`;
+    
+    if ($fan_code == 1) { $hd_fan_mode = "Full"; }
+    elsif ($fan_code == 0) { $hd_fan_mode = " Std"; }
+    elsif ($fan_code == 2) { $hd_fan_mode = " Opt"; }
+    elsif ($fan_code == 4) { $hd_fan_mode = " Hvy"; }
+    
+    return $hd_fan_mode;
+}
 
 sub get_fan_mode_code
 {
@@ -926,6 +1061,20 @@ sub get_fan_speed
     {
         dprint( 1, "$fan_name Fan speed: $fan_speed RPM\n");
     }
+    
+    return $fan_speed;
+}
+
+sub get_fan_speed2
+# get fan speed for specified fan header
+{
+    my ($fan_name) = @_;
+    
+    my $command = "$ipmitool sdr | grep $fan_name";
+
+    my $output = `$command`;
+    my @vals = split(" ", $output);
+    my $fan_speed = "$vals[2]";
     
     return $fan_speed;
 }
