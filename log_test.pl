@@ -166,16 +166,16 @@ sub print_header
     @hd_list = @_;
     my $timestring = build_time_string();
     my $datestring = build_date_string();
-    print LOG "$datestring  ---  Target HD Temperature = $hd_ave_target  ---  Kp = $Kp, Ki = $Ki, Kd = $Kd\n        ";
-    foreach $item (@hd_list)
-    {
-        printf(LOG "%5s", $item);
-    }
-    print LOG "   Max   Ave  Temp   Fan   Fan   Fan   CPU   P      I      D\n        ";
-    
+    print LOG "PID Fan Controller Log  ---  Target HD Temperature = $hd_ave_target  ---  Kp = $Kp, Ki = $Ki, Kd = $Kd\n         ";
     foreach $item (@hd_list)
     {
         print LOG "     ";
+    }
+    print LOG "   Max   Ave  Temp   Fan   Fan   Fan   CPU   P      I      D\n$datestring";
+    
+    foreach $item (@hd_list)
+    {
+        printf(LOG "%5s", $item);
     }
     print LOG " Temp  Temp   Err   Mode   RPM  Duty  Temp Corr   Corr   Corr\n";
     
