@@ -8,6 +8,7 @@ $Kd = 120;
 $hd_ave_target = 36;
 $hd_polling_interval = 10;
 
+$sleep_duration = ($hd_polling_interval * 1000000) - 100000;
 my $last_hd_check_time = 0;
 
 $log = '/root/fan_control.log';
@@ -26,7 +27,7 @@ sub main
     while()
     {
         my $check_time = time;
-        usleep(9900000);
+        usleep($sleep_duration);
         # sleep 9;
         if( $check_time - $last_hd_check_time >= $hd_polling_interval )
         {
