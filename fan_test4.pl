@@ -315,7 +315,7 @@ sub main
             printf(LOG "%4i/%-3i", $hd_fan_duty_old, $hd_fan_duty);
             
             $cput = get_cpu_temp_sysctl();
-            printf(LOG "%4i  %+5.1f  %+5.2f  %+5.1f  %6.3f\n", $cput, $P, $I, $D, $hd_duty);
+            printf(LOG "%4i  %+5.1f  %+5.2f  %+5.1f  %6.3f%\n", $cput, $P, $I, $D, $hd_duty);
         }
         
         # verify_fan_speed_levels function is fairly complicated        
