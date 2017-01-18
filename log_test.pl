@@ -172,7 +172,7 @@ sub print_header
     {
         printf(LOG "%5s", $item)
     }
-    print LOG "  MaxT  AveT  Terr  Mode   RPM  Duty  CPUT    P    I    D\n";
+    print LOG "  MaxT  AveT  Terr  Mode   RPM  Duty  CPUT   P      I       D\n";
     
     return @hd_list;
 }
