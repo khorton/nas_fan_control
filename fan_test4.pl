@@ -102,8 +102,11 @@ $cpu_fans_cool_hd            = 1;  # 1 if the cpu fans should spin up to cool th
 $hd_cpu_override_duty_cycle = 95;  # when the HD duty cycle exceeds this value, the CPU fans may be overridden to help cool HDs
 
 ## PID CONTROL GAINS
-$Kp = 5.333;
-$Ki = 0;
+# $Kp = 5.333;
+# $Ki = 0;
+# $Kd = 120;
+$Kp = 4;
+$Ki = 1;
 $Kd = 120;
 
 
@@ -745,7 +748,7 @@ sub print_log_header
     {
         print LOG "     ";
     }
-    print LOG "  Max   Ave  Temp   Fan   Fan  Duty    CPU   P      I      D\n$datestring";
+    print LOG "  Max   Ave  Temp   Fan   Fan  Fan %   CPU   P      I      D\n$datestring";
     
     foreach $item (@hd_list)
     {
