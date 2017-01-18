@@ -45,7 +45,14 @@ sub main
             }
             my $timestring = build_time_string();
             ($hd_max_temp, $hd_ave_temp, @hd_temps) = get_hd_temps();
-            print "$timestring\n";
+            print "$timestring";
+            foreach my $item (@hd_temps)
+            {
+                printf("%5s", $item);
+                printf("%5s", $hd_max_temp);
+                printf("%5s", $hd_ave_temp);
+                printf("%5.2f\n", $hd_ave_temp - $hd_ave_target);
+            }
         }
     }
 }
