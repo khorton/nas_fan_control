@@ -213,7 +213,7 @@ main();
 
 sub main
 {
-    open LOG, ">", $log or die $!;
+    open LOG, ">>", $log or die $!;
     
     # Print Log Header
     @hd_list = get_hd_list();
@@ -747,7 +747,7 @@ sub print_log_header
     {
         printf(LOG "%4s ", $item);
     }
-    print LOG "Temp  Temp   Err  Mode   RPM  Duty  Temp Corr   Corr   Corr\n";
+    print LOG "Temp  Temp   Err  Mode   RPM  Duty  Temp  Corr   Corr   Corr\n";
     
     return @hd_list;
 }
