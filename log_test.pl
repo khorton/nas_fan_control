@@ -172,55 +172,13 @@ sub get_fan_ave_speed
     my $fan_count = 0;
     foreach my $fan (@_)
     {
-        $speed_sum += get_fan_speed(($fan));
+        $speed_sum += get_fan_speed2(($fan));
         $fan_count += 1;
     }
     
     my $ave_speed = sprintf("%1", $speed_sum / $fan_count);
     
     return $ave_speed;
-}
-
-#unmodded
-
-sub get_fan_speed
-{
-    my ($fan_name) = @_;
-    
-    my $fan = get_fan_header_by_name( $fan_name );
-
-    my $command = "$ipmitool sdr | grep $fan";
-    #dprint( 4, "get fan speed command = $command\n");
-
-     my $output = `$command`;
-      my @vals = split(" ", $output);
-      my $fan_speed = "$vals[2]";
-
-    #dprint( 3, "fan_speed = $fan_speed\n");
-
-
-    if( $fan_speed eq "no" )
-    {
-        #dprint( 0, "$fan_name Fan speed: No reading\n");
-        $fan_speed = -1;
-    }
-    elsif( $fan_speed eq "disabled" )
-    {
-        #dprint( 0, "$fan_name Fan speed: Disabled\n");
-        $fan_speed = -1;
-
-    }
-    elsif( $fan_speed > 10000 || $fan_speed < 0 )
-    {
-        #dprint( 0, "$fan_name Fan speed: $fan_speed RPM, is nonsensical\n");
-        $fan_speed = -1;
-    }
-    else    
-    {
-        #dprint( 1, "$fan_name Fan speed: $fan_speed RPM\n");
-    }
-    
-    return $fan_speed;
 }
 
 sub get_fan_mode
@@ -233,6 +191,22 @@ sub get_fan_mode
     
     return $hd_fan_mode;
 }
+
+sub get_fan_speed2
+{
+    my ($fan_name) = @_;
+    
+    my $command = "$ipmitool sdr | grep $fan_name";
+
+    my $output = `$command`;
+    my @vals = split(" ", $output);
+    my $fan_speed = "$vals[2]";
+    
+    return $fan_speed;
+}
+
+#unmodded
+
 
 sub get_cpu_temp_sysctl
 {
