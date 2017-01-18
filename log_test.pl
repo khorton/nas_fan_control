@@ -58,7 +58,7 @@ sub main
                 printf(LOG "%5s", $item);
             }
             printf(LOG "  ^%2i", $hd_max_temp);
-            printf(LOG "%6.2f", $hd_ave_temp);
+            printf(LOG " %6.2f", $hd_ave_temp);
             printf(LOG "%6.2f", $hd_ave_temp - $hd_ave_target);
             
             $hd_fan_mode = get_fan_mode();
@@ -168,7 +168,7 @@ sub print_header
     {
         printf(LOG "%5s", $item)
     }
-    print LOG "  MaxT  AveT Terr  Mode  RPM  Duty  CPUT   P   I   D\n";
+    print LOG "  MaxT AveT  Terr  Mode  RPM  Duty  CPUT   P   I   D\n";
     
     return @hd_list;
 }
