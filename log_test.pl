@@ -22,6 +22,8 @@ my $ave_fan_speed = 0;
 use POSIX qw(strftime);
 use Time::HiRes qw(usleep nanosleep);
 
+$ipmitool = "/usr/local/bin/ipmitool";
+
 open LOG, ">", $log or die $!;
 
 
@@ -183,7 +185,9 @@ sub get_fan_ave_speed
 
 sub get_fan_mode
 {
-    my $fan_code = `ipmitool raw 0x30 0x45 0`;
+    my $command = "$ipmitool raw 0x30 0x45 0";
+    my $fan_code = `$command`;
+    
     if ($fan_code == 1) { $hd_fan_mode = "Full"; }
     elsif ($fan_code == 0) { $hd_fan_mode = " Std"; }
     elsif ($fan_code == 2) { $hd_fan_mode = " Opt"; }
