@@ -178,7 +178,7 @@ sub get_fan_ave_speed
         $fan_count += 1;
     }
     
-    my $ave_speed = sprintf("%1", $speed_sum / $fan_count);
+    my $ave_speed = sprintf("%i", $speed_sum / $fan_count);
     
     return $ave_speed;
 }
