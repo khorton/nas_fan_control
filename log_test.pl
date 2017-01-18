@@ -177,7 +177,7 @@ sub print_header
     {
         printf(LOG "%4s ", $item);
     }
-    print LOG "Temp  Temp   Err   Mode   RPM  Duty  Temp Corr   Corr   Corr\n";
+    print LOG "Temp  Temp   Err  Mode   RPM  Duty  Temp Corr   Corr   Corr\n";
     
     return @hd_list;
 }
