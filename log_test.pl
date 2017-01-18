@@ -18,6 +18,7 @@ my $hd_ave_temp = 0;
 my @hd_temps = ();
 my $hd_fan_mode = "";
 my $ave_fan_speed = 0;
+my $hd_fan_duty = 100;
 
 use POSIX qw(strftime);
 use Time::HiRes qw(usleep nanosleep);
@@ -56,14 +57,18 @@ sub main
             {
                 printf(LOG "%5s", $item);
             }
-            printf(LOG "%5s", $hd_max_temp);
-            printf(LOG "%6s", $hd_ave_temp);
+            printf(LOG "  ^", $hd_max_temp);
+            printf(LOG "%6.2f", $hd_ave_temp);
             printf(LOG "%6.2f", $hd_ave_temp - $hd_ave_target);
             
             $hd_fan_mode = get_fan_mode();
             printf(LOG "%6s", $hd_fan_mode);
             $ave_fan_speed = get_fan_ave_speed(@hd_fan_list);
-            printf(LOG "%6s\n", $ave_fan_speed)
+            printf(LOG "%6s", $ave_fan_speed);
+            printf(LOG "%5i", $hd_fan_duty);
+            
+            $cput = get_cpu_temp_sysctl();
+            printf(LOG "%5i", $cput, "\n");
         }
     }
 }
@@ -229,6 +234,37 @@ sub get_cpu_temp_sysctl
             $max_core_temp = $core_temp if $core_temp > $max_core_temp;
         }
     }
+
+    $last_cpu_temp = $max_core_temp; #possible that this is 0 if there was a fault reading the core temps
+
+    return $max_core_temp;
+}
+
+sub get_cpu_temp_sysctl
+{
+    # significantly more efficient to filter to dev.cpu than to just grep the whole lot!
+    my $core_temps = `sysctl -a dev.cpu | egrep -E \"dev.cpu\.[0-9]+\.temperature\" | awk '{print \$2}' | sed 's/.\$//'`;
+    chomp($core_temps);
+
+    #dprint(3,"core_temps:\n$core_temps\n");
+
+    my @core_temps_list = split(" ", $core_temps);
+    
+    #dprint_list( 4, "core_temps_list", @core_temps_list );
+
+    my $max_core_temp = 0;
+    
+    foreach my $core_temp (@core_temps_list)
+    {
+        if( $core_temp )
+        {
+            #dprint( 2, "core_temp = $core_temp C\n");
+            
+            $max_core_temp = $core_temp if $core_temp > $max_core_temp;
+        }
+    }
+
+    #dprint(1, "CPU Temp: $max_core_temp\n");
 
     $last_cpu_temp = $max_core_temp; #possible that this is 0 if there was a fault reading the core temps
 
