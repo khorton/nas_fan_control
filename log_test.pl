@@ -58,11 +58,7 @@ sub main
             printf(LOG "%6s", $hd_ave_temp);
             printf(LOG "%6.2f", $hd_ave_temp - $hd_ave_target);
             
-            my $m = get_fan_mode_code();
-            if ($m == 1) { $hd_fan_mode = "Full"; }
-            elsif ($m == 0) { $hd_fan_mode = " Std"; }
-            elsif ($m == 2) { $hd_fan_mode = " Opt"; }
-            elsif ($m == 4) { $hd_fan_mode = " Hvy"; }
+            $hd_fan_mode = get_fan_mode();
             printf(LOG "%6s", $hd_fan_mode);
             $ave_fan_speed = get_fan_ave_speed(@hd_fan_list);
             printf(LOG "%6s\n", $ave_fan_speed)
@@ -227,21 +223,15 @@ sub get_fan_speed
     return $fan_speed;
 }
 
-
-sub get_fan_mode_code
+sub get_fan_mode
 {
-    my ( $fan_mode )  = @_;
-    my $m;
-
-    if(     $fan_mode eq    'standard' )    { $m = 0; }
-    elsif(    $fan_mode eq    'full' )     { $m = 1; }
-    elsif(    $fan_mode eq    'optimal' )     { $m = 2; }
-    elsif(    $fan_mode eq    'heavyio' )    { $m = 4; }
-    else                     { die "illegal fan mode: $fan_mode\n" }
-
-    dprint( 3, "fanmode: $fan_mode = $m\n"); 
-
-    return $m;
+    my $fan_code = `ipmitool raw 0x30 0x45 1`;
+    if ($fan_code == 1) { $hd_fan_mode = "Full"; }
+    elsif ($fan_code == 0) { $hd_fan_mode = " Std"; }
+    elsif ($fan_code == 2) { $hd_fan_mode = " Opt"; }
+    elsif ($fan_code == 4) { $hd_fan_mode = " Hvy"; }
+    
+    return $hd_fan_mode;
 }
 
 sub get_cpu_temp_sysctl
