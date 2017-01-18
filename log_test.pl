@@ -159,7 +159,7 @@ sub build_time_string
 
 sub print_header
 {
-    @hd_list =  = @_;
+    @hd_list = @_;
     my $timestring = build_time_string();
     my $datestring = build_date_string();
     print "$datestring  ---  Target HD Temperature = $hd_ave_target  ---  Kp = $Kp, Ki = $Ki, Kd = $Kd\n";
