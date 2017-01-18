@@ -7,6 +7,7 @@ $Ki = 0;
 $Kd = 120;
 $hd_ave_target = 36;
 $hd_polling_interval = 10;
+$log = '/root/fan_control.log';
 
 $sleep_duration = ($hd_polling_interval * 1000000) - 100000;
 my $last_hd_check_time = 0;
@@ -15,10 +16,11 @@ my $hd_max_temp = 0;
 my $hd_ave_temp = 0;
 my @hd_temps = ();
 
-$log = '/root/fan_control.log';
 
 use POSIX qw(strftime);
 use Time::HiRes qw(usleep nanosleep);
+
+open LOG, $log or die $!;
 
 
 main();
@@ -45,14 +47,14 @@ sub main
             }
             my $timestring = build_time_string();
             ($hd_max_temp, $hd_ave_temp, @hd_temps) = get_hd_temps();
-            print "$timestring";
+            print LOG "$timestring";
             foreach my $item (@hd_temps)
             {
-                printf("%5s", $item);
+                printf(LOG, "%5s", $item);
             }
-            printf("%5s", $hd_max_temp);
-            printf("%5s", $hd_ave_temp);
-            printf("%5.2f\n", $hd_ave_temp - $hd_ave_target);
+            printf(LOG, "%5s", $hd_max_temp);
+            printf(LOG, "%6s", $hd_ave_temp);
+            printf(LOG, "%6.2f\n", $hd_ave_temp - $hd_ave_target);
         }
     }
 }
@@ -169,13 +171,13 @@ sub print_header
     @hd_list = @_;
     my $timestring = build_time_string();
     my $datestring = build_date_string();
-    print "$datestring  ---  Target HD Temperature = $hd_ave_target  ---  Kp = $Kp, Ki = $Ki, Kd = $Kd\n";
-    print "$timestring";
+    print LOG "$datestring  ---  Target HD Temperature = $hd_ave_target  ---  Kp = $Kp, Ki = $Ki, Kd = $Kd\n";
+    print LOG "$timestring";
     foreach $item (@hd_list)
     {
-        printf("%5s", $item)
+        printf(LOG, "%5s", $item)
     }
-    print "  MaxT  AveT Terr  Mode  RPM  Duty  CPUT   P   I   D\n";
+    print LOG "  MaxT  AveT Terr  Mode  RPM  Duty  CPUT   P   I   D\n";
     
     return @hd_list;
 }
