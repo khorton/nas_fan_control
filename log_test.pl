@@ -72,7 +72,7 @@ sub main
             printf(LOG "%5i", $hd_fan_duty);
             
             $cput = get_cpu_temp_sysctl();
-            printf(LOG "%6i  %5.1f  %5.1f  %5.1f\n", $cput, $P, $I, $D);
+            printf(LOG "%6i  %+5.1f  %+5.1f  %+5.1f\n", $cput, $P, $I, $D);
         }
     }
 }
@@ -175,7 +175,7 @@ sub print_header
     
     foreach $item (@hd_list)
     {
-        printf(LOG "%5s", $item);
+        printf(LOG "%4s ", $item);
     }
     print LOG " Temp  Temp   Err   Mode   RPM  Duty  Temp Corr   Corr   Corr\n";
     
