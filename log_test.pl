@@ -49,10 +49,10 @@ sub main
             foreach my $item (@hd_temps)
             {
                 printf("%5s", $item);
-                printf("%5s", $hd_max_temp);
-                printf("%5s", $hd_ave_temp);
-                printf("%5.2f\n", $hd_ave_temp - $hd_ave_target);
             }
+            printf("%5s", $hd_max_temp);
+            printf("%5s", $hd_ave_temp);
+            printf("%5.2f\n", $hd_ave_temp - $hd_ave_target);
         }
     }
 }
