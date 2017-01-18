@@ -50,11 +50,11 @@ sub main
             print LOG "$timestring";
             foreach my $item (@hd_temps)
             {
-                printf(LOG, "%5s", $item);
+                printf(LOG "%5s", $item);
             }
-            printf(LOG, "%5s", $hd_max_temp);
-            printf(LOG, "%6s", $hd_ave_temp);
-            printf(LOG, "%6.2f\n", $hd_ave_temp - $hd_ave_target);
+            printf(LOG "%5s", $hd_max_temp);
+            printf(LOG "%6s", $hd_ave_temp);
+            printf(LOG "%6.2f\n", $hd_ave_temp - $hd_ave_target);
         }
     }
 }
@@ -175,7 +175,7 @@ sub print_header
     print LOG "$timestring";
     foreach $item (@hd_list)
     {
-        printf(LOG, "%5s", $item)
+        printf(LOG "%5s", $item)
     }
     print LOG "  MaxT  AveT Terr  Mode  RPM  Duty  CPUT   P   I   D\n";
     
