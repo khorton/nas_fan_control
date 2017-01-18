@@ -26,7 +26,7 @@ sub main
     while()
     {
         my $check_time = time;
-#        usleep(9500000);
+        usleep(9900000);
         # sleep 9;
         if( $check_time - $last_hd_check_time >= $hd_polling_interval )
         {
