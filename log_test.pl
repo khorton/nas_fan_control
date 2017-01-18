@@ -26,6 +26,7 @@ sub main
     while()
     {
         my $check_time = time;
+        usleep(16500);
         if( $check_time - $last_hd_check_time >= $hd_polling_interval )
         {
             @last_hd_list = @hd_list;
@@ -37,7 +38,6 @@ sub main
             }
             my $timestring = build_time_string();
             print "$timestring\n";
-            usleep(16500);
         }
     }
 }
