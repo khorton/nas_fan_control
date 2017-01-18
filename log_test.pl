@@ -7,7 +7,7 @@ $Ki = 0;
 $Kd = 120;
 $hd_ave_target = 36;
 $hd_polling_interval = 10;
-$log = '/root/fan_control.log';
+$log = '/root/fan_control2.log';
 
 $sleep_duration = ($hd_polling_interval * 1000000) - 100000;
 my $last_hd_check_time = 0;
@@ -20,7 +20,7 @@ my @hd_temps = ();
 use POSIX qw(strftime);
 use Time::HiRes qw(usleep nanosleep);
 
-open LOG, $log or die $!;
+open LOG, ">", $log or die $!;
 
 
 main();
