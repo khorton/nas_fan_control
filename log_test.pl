@@ -166,13 +166,18 @@ sub print_header
     @hd_list = @_;
     my $timestring = build_time_string();
     my $datestring = build_date_string();
-    print LOG "$datestring  ---  Target HD Temperature = $hd_ave_target  ---  Kp = $Kp, Ki = $Ki, Kd = $Kd\n";
-    print LOG "$timestring";
+    print LOG "$datestring  ---  Target HD Temperature = $hd_ave_target  ---  Kp = $Kp, Ki = $Ki, Kd = $Kd\n        ";
     foreach $item (@hd_list)
     {
-        printf(LOG "%5s", $item)
+        printf(LOG "%5s", $item);
     }
-    print LOG "  MaxT  AveT  Terr  Mode   RPM  Duty  CPUT   P      I       D\n";
+    print LOG "  MaxT  AveT  Terr  Mode   RPM  Duty  CPUT   P      I      D\n        ";
+    
+    foreach $item (@hd_list)
+    {
+        print LOG "     ";
+    }
+    print LOG " Temp  Temp   Err   Mode   RPM  Duty  Temp Corr   Corr   Corr\n        ";
     
     return @hd_list;
 }
