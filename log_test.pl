@@ -10,6 +10,10 @@ $hd_polling_interval = 10;
 
 $sleep_duration = ($hd_polling_interval * 1000000) - 100000;
 my $last_hd_check_time = 0;
+my @hd_list = ();
+my $hd_max_temp = 0;
+my $hd_ave_temp = 0;
+my @hd_temps = ();
 
 $log = '/root/fan_control.log';
 
@@ -22,7 +26,8 @@ main();
 sub main
 {
     # Print Log Header
-    @hd_list = print_header();
+    @hd_list = get_hd_list();
+    print_header(@hd_list);
     
     while()
     {
@@ -36,9 +41,10 @@ sub main
             @hd_list = get_hd_list();
             if (@hd_list != @last_hd_list)
             {
-                @hd_list = print_header();
+                @hd_list = print_header(@hd_list);
             }
             my $timestring = build_time_string();
+            ($hd_max_temp, $hd_ave_temp, @hd_temps) = get_hd_temps();
             print "$timestring\n";
         }
     }
@@ -79,12 +85,13 @@ sub get_hd_temp
     return $max_temp;
 }
 
-sub get_hd_max_ave_temp
-# return maximum and average HD temperatures
+sub get_hd_temps
+# return maximum, average HD temperatures and array of individual temps
 {
     my $max_temp = 0;
     my $temp_sum = 0;
     my $HD_count = 0;
+    my @temp_list = ();
 
     foreach my $item (@hd_list)
     {
@@ -101,6 +108,7 @@ sub get_hd_max_ave_temp
 
         if( $temp )
         {
+            push(@temp_list, $temp);
             $temp_sum += $temp;
             $HD_count +=1;
             $max_temp = $temp if $temp > $max_temp;
@@ -109,7 +117,7 @@ sub get_hd_max_ave_temp
 
     my $ave_temp = $temp_sum / $HD_count;
 
-    return ($max_temp, $ave_temp);
+    return ($max_temp, $ave_temp, @temp_list);
 }
 
 sub get_cpu_temp_sysctl
@@ -151,7 +159,7 @@ sub build_time_string
 
 sub print_header
 {
-    @hd_list = get_hd_list();
+    @hd_list =  = @_;
     my $timestring = build_time_string();
     my $datestring = build_date_string();
     print "$datestring  ---  Target HD Temperature = $hd_ave_target  ---  Kp = $Kp, Ki = $Ki, Kd = $Kd\n";
