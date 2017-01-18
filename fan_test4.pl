@@ -106,7 +106,7 @@ $hd_cpu_override_duty_cycle = 95;  # when the HD duty cycle exceeds this value, 
 # $Ki = 0;
 # $Kd = 120;
 $Kp = 3;
-$Ki = 0.3;
+$Ki = 0.1;
 $Kd = 120;
 
 
@@ -315,7 +315,7 @@ sub main
             printf(LOG "%4i/%-3i", $hd_fan_duty_old, $hd_fan_duty);
             
             $cput = get_cpu_temp_sysctl();
-            printf(LOG "%4i  %+5.1f  %+5.1f  %+5.1f\n", $cput, $P, $I, $D);
+            printf(LOG "%4i  %+5.1f  %+5.2f  %+5.1f\n", $cput, $P, $I, $D);
         }
         
         # verify_fan_speed_levels function is fairly complicated        
