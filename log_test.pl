@@ -2,6 +2,10 @@
 
 # logging test
 
+$P = -1.1;
+$I = -2.3;
+$D = -45.3;
+
 $Kp = 5.333;
 $Ki = 0;
 $Kd = 120;
@@ -68,7 +72,7 @@ sub main
             printf(LOG "%5i", $hd_fan_duty);
             
             $cput = get_cpu_temp_sysctl();
-            printf(LOG "%5i\n", $cput);
+            printf(LOG "%6i  %5.1f  %6.1f  %6.1f\n", $cput, $P, $I, $D);
         }
     }
 }
@@ -168,7 +172,7 @@ sub print_header
     {
         printf(LOG "%5s", $item)
     }
-    print LOG "  MaxT  AveT  Terr  Mode   RPM   Duty  CPUT   P   I   D\n";
+    print LOG "  MaxT  AveT  Terr  Mode   RPM  Duty  CPUT   P   I   D\n";
     
     return @hd_list;
 }
