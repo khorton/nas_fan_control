@@ -171,13 +171,13 @@ sub print_header
     {
         printf(LOG "%5s", $item);
     }
-    print LOG "  MaxT  AveT  Terr  Mode   RPM  Duty  CPUT   P      I      D\n        ";
+    print LOG "   Max   Ave  Temp   Fan   Fan   Fan   CPU   P      I      D\n        ";
     
     foreach $item (@hd_list)
     {
         print LOG "     ";
     }
-    print LOG " Temp  Temp   Err   Mode   RPM  Duty  Temp Corr   Corr   Corr\n        ";
+    print LOG " Temp  Temp   Err   Mode   RPM  Duty  Temp Corr   Corr   Corr\n";
     
     return @hd_list;
 }
