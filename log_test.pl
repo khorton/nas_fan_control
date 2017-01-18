@@ -57,7 +57,7 @@ sub main
             {
                 printf(LOG "%5s", $item);
             }
-            printf(LOG "  ^", $hd_max_temp);
+            printf(LOG "  ^%2i", $hd_max_temp);
             printf(LOG "%6.2f", $hd_ave_temp);
             printf(LOG "%6.2f", $hd_ave_temp - $hd_ave_target);
             
@@ -68,8 +68,7 @@ sub main
             printf(LOG "%5i", $hd_fan_duty);
             
             $cput = get_cpu_temp_sysctl();
-            printf(LOG "%5i", $cput);
-            print "\n";
+            printf(LOG "%5i\n", $cput);
         }
     }
 }
