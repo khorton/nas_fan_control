@@ -217,7 +217,7 @@ sub main
     
     # Print Log Header
     @hd_list = get_hd_list();
-    print_header(@hd_list);
+    print_log_header(@hd_list);
     
     # need to go to Full mode so we have unfettered control of Fans
     set_fan_mode("full");
@@ -291,7 +291,7 @@ sub main
             if (@hd_list != @last_hd_list)
             {
                 # print new disk iD header if it has changed (e.g. hot swap insert or remove)
-                @hd_list = print_header(@hd_list);
+                @hd_list = print_log_header(@hd_list);
             }
             my $timestring = build_time_string();
             ($hd_max_temp, $hd_ave_temp, @hd_temps) = get_hd_temps();
