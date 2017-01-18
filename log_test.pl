@@ -26,8 +26,8 @@ sub main
     while()
     {
         my $check_time = time;
-        # usleep(16500);
-        sleep 11;
+        usleep(11000000);
+        # sleep 11;
         if( $check_time - $last_hd_check_time >= $hd_polling_interval )
         {
             @last_hd_list = @hd_list;
