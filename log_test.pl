@@ -172,7 +172,7 @@ sub get_fan_ave_speed
     my $fan_count = 0;
     foreach my $fan (@_)
     {
-        $speed_sum += get_fan_speed2(($fan));
+        $speed_sum += get_fan_speed2($fan);
         $fan_count += 1;
     }
     
