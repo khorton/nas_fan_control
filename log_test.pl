@@ -68,7 +68,8 @@ sub main
             printf(LOG "%5i", $hd_fan_duty);
             
             $cput = get_cpu_temp_sysctl();
-            printf(LOG "%5i", $cput, "\n");
+            printf(LOG "%5i", $cput);
+            print "\n";
         }
     }
 }
