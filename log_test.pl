@@ -225,7 +225,7 @@ sub get_fan_speed
 
 sub get_fan_mode
 {
-    my $fan_code = `ipmitool raw 0x30 0x45 1`;
+    my $fan_code = `ipmitool raw 0x30 0x45 0`;
     if ($fan_code == 1) { $hd_fan_mode = "Full"; }
     elsif ($fan_code == 0) { $hd_fan_mode = " Std"; }
     elsif ($fan_code == 2) { $hd_fan_mode = " Opt"; }
