@@ -105,7 +105,7 @@ $hd_cpu_override_duty_cycle = 95;  # when the HD duty cycle exceeds this value, 
 # $Kp = 5.333;
 # $Ki = 0;
 # $Kd = 120;
-$Kp = 3;
+$Kp = 4;
 $Ki = 0.1;
 $Kd = 120;
 
