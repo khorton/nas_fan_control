@@ -278,6 +278,7 @@ sub main
             @hd_list = get_hd_list();
             
             my ($hd_max_temp, $hd_ave_temp, @hd_temps) = get_hd_temps();
+            $hd_fan_duty_old = $hd_fan_duty;
             $hd_fan_duty = calculate_hd_fan_duty_cycle_PID( $hd_max_temp, $hd_ave_temp, $hd_fan_duty );
             
             if( !$override_hd_fan_level )
@@ -308,7 +309,7 @@ sub main
             printf(LOG "%6s", $hd_fan_mode);
             $ave_fan_speed = get_fan_ave_speed(@hd_fan_list);
             printf(LOG "%6s", $ave_fan_speed);
-            printf(LOG "%5i", $hd_fan_duty);
+            printf(LOG "%4i/%3i", $hd_fan_duty_old, $hd_fan_duty);
             
             $cput = get_cpu_temp_sysctl();
             printf(LOG "%6i  %+5.1f  %+5.1f  %+5.1f\n", $cput, $P, $I, $D);
@@ -667,9 +668,12 @@ sub calculate_hd_fan_duty_cycle_PID
         my $temp_error = $hd_ave_temp - $hd_ave_target;
         $integral += $temp_error * $hd_polling_interval / 60;
         my $derivative = ($temp_error - $temp_error_old) * 60 / $hd_polling_interval;
-        my $P = $Kp * $temp_error * $hd_polling_interval / 60;
-        my $I = $Ki * $integral;
-        my $D = $Kd * $derivative;
+        # my $P = $Kp * $temp_error * $hd_polling_interval / 60;
+        # my $I = $Ki * $integral;
+        # my $D = $Kd * $derivative;
+        $P = $Kp * $temp_error * $hd_polling_interval / 60;
+        $I = $Ki * $integral;
+        $D = $Kd * $derivative;
         # $hd_duty = $old_hd_duty + $P + $I + $D;
         $hd_duty = $hd_duty + $P + $I + $D;
 
@@ -741,13 +745,13 @@ sub print_log_header
     {
         print LOG "     ";
     }
-    print LOG "  Max   Ave  Temp   Fan   Fan   Fan   CPU   P      I      D\n$datestring";
+    print LOG "  Max   Ave  Temp   Fan   Fan  Duty    CPU   P      I      D\n$datestring";
     
     foreach $item (@hd_list)
     {
         printf(LOG "%4s ", $item);
     }
-    print LOG "Temp  Temp   Err  Mode   RPM  Duty  Temp  Corr   Corr   Corr\n";
+    print LOG "Temp  Temp   Err  Mode   RPM Old/New Temp  Corr   Corr   Corr\n";
     
     return @hd_list;
 }
