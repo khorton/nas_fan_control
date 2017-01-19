@@ -306,7 +306,7 @@ sub main
             }
             printf(LOG "  ^%2i", $hd_max_temp);
             printf(LOG " %6.2f", $hd_ave_temp);
-            printf(LOG "%6.2f", $hd_ave_temp - $hd_ave_target);
+            printf(LOG "%+6.2f", $hd_ave_temp - $hd_ave_target);
             
             $hd_fan_mode = get_fan_mode();
             printf(LOG "%6s", $hd_fan_mode);
@@ -743,7 +743,7 @@ sub print_log_header
     @hd_list = @_;
     my $timestring = build_time_string();
     my $datestring = build_date_string();
-    printf(LOG "PID Fan Controller Log  ---  Target HD Temperature = %5.2f  ---  Kp = %6.3f, Ki = %6.3f, Kd = %5.1f\n         ", $hd_ave_target, $Kp, $Ki, $Kd);
+    printf(LOG "PID Fan Controller Log  ---  Target HD Temperature = %5.2f deg C  ---  PID Control Gains: Kp = %6.3f, Ki = %6.3f, Kd = %5.1f\n         ", $hd_ave_target, $Kp, $Ki, $Kd);
     foreach $item (@hd_list)
     {
         print LOG "     ";
