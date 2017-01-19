@@ -756,13 +756,13 @@ sub print_log_header
     {
         print LOG "     ";
     }
-    print LOG "  Max   Ave  Temp   Fan   Fan  Fan %   CPU   P      I      D     Fan\n$datestring";
+    print LOG "  Max   Ave  Temp   Fan   Fan  Fan %   CPU   P      I      D       Fan\n$datestring";
     
     foreach $item (@hd_list)
     {
         printf(LOG "%4s ", $item);
     }
-    print LOG "Temp  Temp   Err  Mode   RPM Old/New Temp  Corr   Corr   Corr   Duty\n";
+    print LOG "Temp  Temp   Err  Mode   RPM Old/New Temp  Corr   Corr   Corr    Duty\n";
     
     return @hd_list;
 }
