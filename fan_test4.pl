@@ -315,7 +315,7 @@ sub main
             printf(LOG "%4i/%-3i", $hd_fan_duty_old, $hd_fan_duty);
             
             $cput = get_cpu_temp_sysctl();
-            printf(LOG "%4i %+6.2f %+6.2f %+6.2f %6.2f%\n", $cput, $P, $I, $D, $hd_duty);
+            printf(LOG "%4i %+6.2f %+6.2f  %+6.2f  %6.2f%\n", $cput, $P, $I, $D, $hd_duty);
         }
         
         # verify_fan_speed_levels function is fairly complicated        
@@ -754,7 +754,7 @@ sub print_log_header
     {
         printf(LOG "%4s ", $item);
     }
-    print LOG "Temp  Temp   Err  Mode   RPM Old/New Temp  Corr   Corr   Corr     Duty\n";
+    print LOG "Temp  Temp   Err  Mode   RPM Old/New Temp  Corr   Corr   Corr   Duty\n";
     
     return @hd_list;
 }
