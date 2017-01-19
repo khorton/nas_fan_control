@@ -56,6 +56,14 @@
 #            and HD fans are set to 100%
 #            Retain float value of fan duty cycle between loop cycles, so that small duty cycle corrections 
 #            accumulate and eventually push the duty cycle to the next integer value.
+# 2017-01-18 Added log file
+#
+# TO DO
+#           Add header to log file every X hours
+#
+#           Refactor code to bump up CPU fan to help cool HD.  Drop the variabe CPU duty cycle, and just set to High.
+#
+#           Add option for no CPU fan control.
 ###############################################################################################
 ## CONFIGURATION
 ################
@@ -743,7 +751,7 @@ sub print_log_header
     @hd_list = @_;
     my $timestring = build_time_string();
     my $datestring = build_date_string();
-    printf(LOG "PID Fan Controller Log  ---  Target HD Temperature = %5.2f deg C  ---  PID Control Gains: Kp = %6.3f, Ki = %6.3f, Kd = %5.1f\n         ", $hd_ave_target, $Kp, $Ki, $Kd);
+    printf(LOG "\n\nPID Fan Controller Log  ---  Target HD Temperature = %5.2f deg C  ---  PID Control Gains: Kp = %6.3f, Ki = %6.3f, Kd = %5.1f\n         ", $hd_ave_target, $Kp, $Ki, $Kd);
     foreach $item (@hd_list)
     {
         print LOG "     ";
