@@ -315,7 +315,7 @@ sub main
             printf(LOG "%4i/%-3i", $hd_fan_duty_old, $hd_fan_duty);
             
             $cput = get_cpu_temp_sysctl();
-            printf(LOG "%4i  %+5.1f  %+5.2f  %+5.1f  %6.3f%\n", $cput, $P, $I, $D, $hd_duty);
+            printf(LOG "%4i  %+5.1f  %+5.2f  %+5.1f  %5.2f%\n", $cput, $P, $I, $D, $hd_duty);
         }
         
         # verify_fan_speed_levels function is fairly complicated        
@@ -743,7 +743,7 @@ sub print_log_header
     @hd_list = @_;
     my $timestring = build_time_string();
     my $datestring = build_date_string();
-    print LOG "PID Fan Controller Log  ---  Target HD Temperature = $hd_ave_target  ---  Kp = $Kp, Ki = $Ki, Kd = $Kd\n         ";
+    printf(LOG "PID Fan Controller Log  ---  Target HD Temperature = %5.2f  ---  Kp = %6.3f, Ki = %6.3f, Kd = %5.1f\n         ", $hd_ave_target, $Kp, $Ki, $Kd);
     foreach $item (@hd_list)
     {
         print LOG "     ";
