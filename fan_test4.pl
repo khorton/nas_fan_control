@@ -314,7 +314,7 @@ sub main
             }
             printf(LOG "  ^%2i", $hd_max_temp);
             printf(LOG " %6.2f", $hd_ave_temp);
-            printf(LOG "%+6.2f", $hd_ave_temp - $hd_ave_target);
+            printf(LOG "%6.2f", $hd_ave_temp - $hd_ave_target);
             
             $hd_fan_mode = get_fan_mode();
             printf(LOG "%6s", $hd_fan_mode);
@@ -323,7 +323,7 @@ sub main
             printf(LOG "%4i/%-3i", $hd_fan_duty_old, $hd_fan_duty);
             
             $cput = get_cpu_temp_sysctl();
-            printf(LOG "%4i %+6.2f %+6.2f  %+6.2f  %6.2f%\n", $cput, $P, $I, $D, $hd_duty);
+            printf(LOG "%4i %6.2f %6.2f  %6.2f  %6.2f%\n", $cput, $P, $I, $D, $hd_duty);
         }
         
         # verify_fan_speed_levels function is fairly complicated        
