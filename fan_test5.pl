@@ -57,11 +57,11 @@
 #            Retain float value of fan duty cycle between loop cycles, so that small duty cycle corrections 
 #            accumulate and eventually push the duty cycle to the next integer value.
 # 2017-01-18 Added log file
+# 2017-01-21 Refactored code to bump up CPU fan to help cool HD.  Drop the variabe CPU duty cycle, and just set to High,
+#            Added log file option without temps for every HD.
 #
 # TO DO
 #           Add header to log file every X hours
-#
-#           Refactor code to bump up CPU fan to help cool HD.  Drop the variabe CPU duty cycle, and just set to High.
 #
 #           Add option for no CPU fan control.
 ###############################################################################################
