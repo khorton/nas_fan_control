@@ -71,7 +71,7 @@
 ## DEBUG LEVEL
 ## 0 means no debugging. 1,2,3,4 provide more verbosity
 ## You should run this script in at least level 1 to verify its working correctly on your system
-$debug = 0;
+$debug = 1;
 
 ## LOG
 $log = '/root/fan_control2.log';
@@ -107,15 +107,15 @@ $hd_fans_cool_cpu = 1;      # 1 if the hd fans should spin up to cool the cpu, 0
 
 ## HD FAN DUTY CYCLE TO OVERRIDE CPU FANS
 $cpu_fans_cool_hd            = 1;  # 1 if the cpu fans should spin up to cool the HDs, when needed.  0 otherwise
-$hd_cpu_override_duty_cycle = 95;  # when the HD duty cycle exceeds this value, the CPU fans may be overridden to help cool HDs
+$hd_cpu_override_duty_cycle = 95;  # when the HD duty cycle equals or exceeds this value, the CPU fans may be overridden to help cool HDs
+
+## CPU TEMP CONTROL
+$cpu_temp_control = 1;  # 1 if the script will control a CPU fan to control CPU temperatures.  0 if the script only controls HD fans.
 
 ## PID CONTROL GAINS
 $Kp = 16/3; # 5.333
 $Ki = 0;
 $Kd = 120;
-# $Kp = 5;
-# $Ki = 0.1;
-# $Kd = 120;
 
 
 #######################
@@ -143,6 +143,7 @@ $hd_fan_duty_med_high  = 80;
 $hd_fan_duty_med_low   = 50;
 $hd_fan_duty_low       = 25;    # some 120mm fans stall below 30.
 $hd_fan_duty           = 70;    # HD fan duty cycle when script starts.
+
 
 ## FAN ZONES
 # Your CPU/case fans should probably be connected to the main fan sockets, which are in fan zone zero
@@ -203,7 +204,6 @@ $bmc_fail_threshold    = 1;     # will retry n times before rebooting
 # massage fan speeds
 $cpu_max_fan_speed *= 0.8;
 $hd_max_fan_speed *= 0.8;
-$cpu_hd_fan_speed = $cpu_max_fan_speed * 0.64;
 
 $hd_duty = $hd_fan_duty;
 
@@ -240,6 +240,7 @@ sub main
     $hd_ave_temp_old = $hd_ave_target;
     $temp_error = 0;
     my $integral = 0;
+    $cpu_fan_override = 0;
 
     
     while()
@@ -297,7 +298,6 @@ sub main
                 set_fan_zone_duty_cycle( $hd_fan_zone, $hd_fan_duty );
 
                 $last_fan_level_change_time = time; # this resets every time, but it shouldn't matter since hd_polling_interval is large.
-            # 
             }
             # print to log
             if (@hd_list != @last_hd_list)
@@ -768,17 +768,9 @@ sub control_cpu_fan
 
     my $cpu_fan_level = decide_cpu_fan_level( $cpu_temp, $old_cpu_fan_level );
 
-    if( $old_cpu_fan_level ne $cpu_fan_level || $cpu_min_duty_cycle_from_hds != 0 )
+	if( $old_cpu_fan_level ne $cpu_fan_level )
     {
-        if ($cpu_min_duty_cycle_from_hds == 0)
-        {
             dprint( 1, "CPU Fan changing... ($cpu_fan_level)\n");
-        }
-        else
-        {
-            dprint( 1, "CPU Fan set.to help cool HDs.\n");
-        }
-        
         set_fan_zone_level( $cpu_fan_zone, $cpu_fan_level );    
     }
 
@@ -835,11 +827,11 @@ sub calculate_hd_fan_duty_cycle_PID
     
     if ($cpu_fans_cool_hd == 1 && $hd_duty > $hd_cpu_override_duty_cycle)
     {
-        $cpu_min_duty_cycle_from_hds = $hd_duty;
+        $cpu_fan_override = 1;
     }
     else
     {
-        $cpu_min_duty_cycle_from_hds = 0;
+        $cpu_fan_override = 0;
     }
     # $hd_duty is retained as float between cycles, so any small incremental adjustments less 
     # than 1 will not be lost, but build up until they are large enough to cause a change 
@@ -1036,56 +1028,64 @@ sub get_cpu_temp_ipmi
 sub decide_cpu_fan_level
 {
     my ($cpu_temp, $cpu_fan) = @_;
-
-    #if cpu_temp evaluates as "0", its most likely the reading returned rubbish.
-    if ($cpu_temp <= 0) 
+    
+    if ($cpu_fan_override == 1)
     {
-        if( $cpu_temp eq "No")    # "No reading" 
-        {
-            dprint( 0, "CPU Temp has no reading.\n");
-        }
-        elsif( $cpu_temp eq "Disabled" )
-        {
-            dprint( 0, "CPU Temp reading disabled.\n");
-        }
-        else
-        {
-            dprint( 0, "Unexpected CPU Temp ($cpu_temp).\n");
-        }
-        dprint( 0, "Assuming worst-case and going high.\n");
         $cpu_fan = "high";
-    } 
+        dprint( 0, "CPU fan set to high to help cool HDs.\n");
+    }
     else
     {
-        if( $cpu_temp >= $high_cpu_temp )
+        #if cpu_temp evaluates as "0", its most likely the reading returned rubbish.
+        if ($cpu_temp <= 0) 
         {
-            if( $cpu_fan ne "high" )
+            if( $cpu_temp eq "No")    # "No reading" 
             {
-                dprint( 0, "CPU Temp: $cpu_temp >= $high_cpu_temp, CPU Fan going high.\n");
+                dprint( 0, "CPU Temp has no reading.\n");
             }
+            elsif( $cpu_temp eq "Disabled" )
+            {
+                dprint( 0, "CPU Temp reading disabled.\n");
+            }
+            else
+            {
+                dprint( 0, "Unexpected CPU Temp ($cpu_temp).\n");
+            }
+            dprint( 0, "Assuming worst-case and going high.\n");
             $cpu_fan = "high";
-        }
-        elsif( $cpu_temp >= $med_cpu_temp )
+        } 
+        else
         {
-            if( $cpu_fan ne "med" )
+            if( $cpu_temp >= $high_cpu_temp )
             {
-                dprint( 0, "CPU Temp: $cpu_temp >= $med_cpu_temp, CPU Fan going med.\n");
+                if( $cpu_fan ne "high" )
+                {
+                    dprint( 0, "CPU Temp: $cpu_temp >= $high_cpu_temp, CPU Fan going high.\n");
+                }
+                $cpu_fan = "high";
             }
-            $cpu_fan = "med";
-        }
-        elsif( $cpu_temp > $low_cpu_temp && ($cpu_fan eq "high" || $cpu_fan eq "" ) )
-        {
-            dprint( 0, "CPU Temp: $cpu_temp dropped below $med_cpu_temp, CPU Fan going med.\n");
+            elsif( $cpu_temp >= $med_cpu_temp )
+            {
+                if( $cpu_fan ne "med" )
+                {
+                    dprint( 0, "CPU Temp: $cpu_temp >= $med_cpu_temp, CPU Fan going med.\n");
+                }
+                $cpu_fan = "med";
+            }
+            elsif( $cpu_temp > $low_cpu_temp && ($cpu_fan eq "high" || $cpu_fan eq "" ) )
+            {
+                dprint( 0, "CPU Temp: $cpu_temp dropped below $med_cpu_temp, CPU Fan going med.\n");
             
-            $cpu_fan = "med";
-        }
-        elsif( $cpu_temp <= $low_cpu_temp )
-        {
-            if( $cpu_fan ne "low" )
-            {
-                dprint( 0, "CPU Temp: $cpu_temp <= $low_cpu_temp, CPU Fan going low.\n");
+                $cpu_fan = "med";
             }
-            $cpu_fan = "low";
+            elsif( $cpu_temp <= $low_cpu_temp )
+            {
+                if( $cpu_fan ne "low" )
+                {
+                    dprint( 0, "CPU Temp: $cpu_temp <= $low_cpu_temp, CPU Fan going low.\n");
+                }
+                $cpu_fan = "low";
+            }
         }
     }
         
@@ -1136,12 +1136,6 @@ sub set_fan_zone_level
     {
         $duty = $fan_duty_high;
     }
-
-    # if ( $cpu_min_duty_cycle_from_hds > $duty )
-    # {
-    #     $duty = $cpu_min_duty_cycle_from_hds;
-    #     dprint( 2, "CPU Fan overridden by HD temps\n");
-    # }
 
     set_fan_zone_duty_cycle( $fan_zone, $duty );
 }
