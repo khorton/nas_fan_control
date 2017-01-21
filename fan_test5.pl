@@ -75,6 +75,7 @@ $debug = 1;
 
 ## LOG
 $log = '/root/fan_control2.log';
+$log_temp_summary_only = 1; # 1 if not logging individual HD temperatures.  0 if logging temp of each HD
 
 ## CPU THRESHOLD TEMPS
 ## A modern CPU can heat up from 35C to 60C in a second or two. The fan duty cycle is set based on this
@@ -300,17 +301,27 @@ sub main
                 $last_fan_level_change_time = time; # this resets every time, but it shouldn't matter since hd_polling_interval is large.
             }
             # print to log
-            if (@hd_list != @last_hd_list)
+            if (@hd_list != @last_hd_list && $log_temp_summary_only == 0)
             {
                 # print new disk iD header if it has changed (e.g. hot swap insert or remove)
                 @hd_list = print_log_header(@hd_list);
             }
             my $timestring = build_time_string();
-            ($hd_max_temp, $hd_ave_temp, @hd_temps) = get_hd_temps();
+            ($hd_min_temp, $hd_max_temp, $hd_ave_temp, @hd_temps) = get_hd_temps();
+            
             print LOG "$timestring";
-            foreach my $item (@hd_temps)
+            
+            if ($log_temp_summary_only == 0)
             {
-                printf(LOG "%5s", $item);
+                foreach my $item (@hd_temps)
+                {
+                    printf(LOG "%5s", $item);
+                }
+            }
+            else
+            {
+                printf(LOG "  ^%2i", @hd_list); # number of HDs, so it can be seen if a hot swap addition or removal was detected
+                printf(LOG "  ^%2i", $hd_min_temp);
             }
             printf(LOG "  ^%2i", $hd_max_temp);
             printf(LOG " %6.2f", $hd_ave_temp);
@@ -427,9 +438,10 @@ sub get_hd_temp
 # }
 
 sub get_hd_temps
-# return maximum, average HD temperatures and array of individual temps
+# return minimum, maximum, average HD temperatures and array of individual temps
 {
     my $max_temp = 0;
+    my $min_temp = 1000;
     my $temp_sum = 0;
     my $HD_count = 0;
     my @temp_list = ();
@@ -453,12 +465,13 @@ sub get_hd_temps
             $temp_sum += $temp;
             $HD_count +=1;
             $max_temp = $temp if $temp > $max_temp;
+            $min_temp = $temp if $temp < $min_temp;
         }
     }
 
     my $ave_temp = $temp_sum / $HD_count;
 
-    return ($max_temp, $ave_temp, @temp_list);
+    return ($min_temp, $max_temp, $ave_temp, @temp_list);
 }
 
 
@@ -868,15 +881,29 @@ sub print_log_header
     my $timestring = build_time_string();
     my $datestring = build_date_string();
     printf(LOG "\n\nPID Fan Controller Log  ---  Target HD Temperature = %5.2f deg C  ---  PID Control Gains: Kp = %6.3f, Ki = %6.3f, Kd = %5.1f\n         ", $hd_ave_target, $Kp, $Ki, $Kd);
-    foreach $item (@hd_list)
+    if ($log_temp_summary_only == 0)
     {
-        print LOG "     ";
+        foreach $item (@hd_list)
+        {
+            print LOG "     ";
+        }
+        else
+        {
+            print LOG "  HD   Min";
+        }
     }
     print LOG "  Max   Ave  Temp   Fan   Fan  Fan %   CPU   P      I      D       Fan\n$datestring";
     
-    foreach $item (@hd_list)
+    if ($log_temp_summary_only == 0)
     {
-        printf(LOG "%4s ", $item);
+        foreach $item (@hd_list)
+        {
+            printf(LOG "%4s ", $item);
+        }
+    }
+    else
+    {
+        print LOG "  Qty Temp";
     }
     print LOG "Temp  Temp   Err  Mode   RPM Old/New Temp  Corr   Corr   Corr    Duty\n";
     
