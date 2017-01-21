@@ -314,7 +314,7 @@ sub main
             if ($log_temp_summary_only)
             {
                 printf(LOG "  ^%2i", @hd_list); # number of HDs, so it can be seen if a hot swap addition or removal was detected
-                printf(LOG "  ^%2i", $hd_min_temp);
+                printf(LOG "  v%2i", $hd_min_temp);
             }
             else
             {
@@ -883,7 +883,7 @@ sub print_log_header
     printf(LOG "\n\nPID Fan Controller Log  ---  Target HD Temperature = %5.2f deg C  ---  PID Control Gains: Kp = %6.3f, Ki = %6.3f, Kd = %5.1f\n         ", $hd_ave_target, $Kp, $Ki, $Kd);
     if ($log_temp_summary_only)
     {
-        print LOG "  HD   Min";
+        print LOG "   HD   Min";
     }
     else
     {
@@ -897,7 +897,7 @@ sub print_log_header
     
     if ($log_temp_summary_only)
     {
-        print LOG "  Qty Temp";
+        print LOG " Qty  Temp";
     }
     else
     {
