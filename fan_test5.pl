@@ -75,7 +75,7 @@ $debug = 1;
 
 ## LOG
 $log = '/root/fan_control2.log';
-$log_temp_summary_only = 0; # 1 if not logging individual HD temperatures.  0 if logging temp of each HD
+$log_temp_summary_only = 1; # 1 if not logging individual HD temperatures.  0 if logging temp of each HD
 
 ## CPU THRESHOLD TEMPS
 ## A modern CPU can heat up from 35C to 60C in a second or two. The fan duty cycle is set based on this
