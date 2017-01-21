@@ -313,7 +313,7 @@ sub main
             
             if ($log_temp_summary_only)
             {
-                printf(LOG "  ^%2i", 0+@hd_list); # number of HDs, so it can be seen if a hot swap addition or removal was detected
+                printf(LOG "    %2i", 0+@hd_list); # number of HDs, so it can be seen if a hot swap addition or removal was detected
                 printf(LOG "   %2i", $hd_min_temp);
             }
             else
@@ -324,7 +324,7 @@ sub main
                 }
             }
             printf(LOG "  ^%2i", $hd_max_temp);
-            printf(LOG " %6.2f", $hd_ave_temp);
+            printf(LOG "%6.2f", $hd_ave_temp);
             printf(LOG "%6.2f", $hd_ave_temp - $hd_ave_target);
             
             $hd_fan_mode = get_fan_mode();
