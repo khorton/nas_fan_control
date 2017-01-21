@@ -893,7 +893,7 @@ sub print_log_header
         }
     }
     
-    print LOG "  Max   Ave  Temp   Fan   Fan  Fan %   CPU   P      I      D       Fan\n$datestring";
+    print LOG "  Max   Ave  Temp   Fan   Fan  Fan %   CPU    P      I      D      Fan\n$datestring";
     
     if ($log_temp_summary_only)
     {
