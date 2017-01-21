@@ -323,7 +323,7 @@ sub main
                     printf(LOG "%5s", $item);
                 }
             }
-            printf(LOG "  ^%2i", $hd_max_temp);
+            printf(LOG "   ^%2i", $hd_max_temp);
             printf(LOG "%6.2f", $hd_ave_temp);
             printf(LOG "%6.2f", $hd_ave_temp - $hd_ave_target);
             
@@ -897,7 +897,7 @@ sub print_log_header
     
     if ($log_temp_summary_only)
     {
-        print LOG " Qty  Temp";
+        print LOG " Qty  Temp ";
     }
     else
     {
