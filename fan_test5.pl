@@ -313,8 +313,8 @@ sub main
             
             if ($log_temp_summary_only)
             {
-                printf(LOG "  ^%2i", @hd_list); # number of HDs, so it can be seen if a hot swap addition or removal was detected
-                printf(LOG "  v%2i", $hd_min_temp);
+                printf(LOG "  ^%2i", 0+@hd_list); # number of HDs, so it can be seen if a hot swap addition or removal was detected
+                printf(LOG "   %2i", $hd_min_temp);
             }
             else
             {
