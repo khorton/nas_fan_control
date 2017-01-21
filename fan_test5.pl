@@ -238,11 +238,11 @@ sub main
     my $old_cpu_fan_level = "";
     my $override_hd_fan_level = 0;
     my $last_hd_check_time = 0;
-    $hd_ave_temp_old = $hd_ave_target;
     $temp_error = 0;
     my $integral = 0;
     $cpu_fan_override = 0;
 
+    ($hd_min_temp, $hd_max_temp, $hd_ave_temp_old, @hd_temps) = get_hd_temps();
     
     while()
     {
@@ -290,7 +290,7 @@ sub main
             # starting checking their temps too!
             @hd_list = get_hd_list();
             
-            my ($hd_min_temp, $hd_max_temp, $hd_ave_temp, @hd_temps) = get_hd_temps();
+            ($hd_min_temp, $hd_max_temp, $hd_ave_temp, @hd_temps) = get_hd_temps();
             $hd_fan_duty_old = $hd_fan_duty;
             $hd_fan_duty = calculate_hd_fan_duty_cycle_PID( $hd_max_temp, $hd_ave_temp, $hd_fan_duty );
             
