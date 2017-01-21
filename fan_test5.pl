@@ -290,7 +290,7 @@ sub main
             # starting checking their temps too!
             @hd_list = get_hd_list();
             
-            my ($hd_max_temp, $hd_ave_temp, @hd_temps) = get_hd_temps();
+            my ($hd_min_temp, $hd_max_temp, $hd_ave_temp, @hd_temps) = get_hd_temps();
             $hd_fan_duty_old = $hd_fan_duty;
             $hd_fan_duty = calculate_hd_fan_duty_cycle_PID( $hd_max_temp, $hd_ave_temp, $hd_fan_duty );
             
@@ -307,7 +307,7 @@ sub main
                 @hd_list = print_log_header(@hd_list);
             }
             my $timestring = build_time_string();
-            ($hd_min_temp, $hd_max_temp, $hd_ave_temp, @hd_temps) = get_hd_temps();
+            # ($hd_min_temp, $hd_max_temp, $hd_ave_temp, @hd_temps) = get_hd_temps();
             
             print LOG "$timestring";
             
