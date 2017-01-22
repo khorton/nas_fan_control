@@ -110,7 +110,7 @@ $cpu_fans_cool_hd            = 1;  # 1 if the cpu fans should spin up to cool th
 $hd_cpu_override_duty_cycle = 95;  # when the HD duty cycle equals or exceeds this value, the CPU fans may be overridden to help cool HDs
 
 ## CPU TEMP CONTROL
-$cpu_temp_control = 1;  # 1 if the script will control a CPU fan to control CPU temperatures.  0 if the script only controls HD fans.
+$cpu_temp_control = 0;  # 1 if the script will control a CPU fan to control CPU temperatures.  0 if the script only controls HD fans.
 
 ## PID CONTROL GAINS
 $Kp = 16/3; # 5.333
@@ -142,7 +142,7 @@ $hd_fan_duty_high      = 100;    # percentage on, ie 100% is full speed.
 $hd_fan_duty_med_high  = 80;
 $hd_fan_duty_med_low   = 50;
 $hd_fan_duty_low       = 25;    # some 120mm fans stall below 30.
-$hd_fan_duty           = 70;    # HD fan duty cycle when script starts.
+$hd_fan_duty_start     = 40;    # HD fan duty cycle when script starts.
 
 
 ## FAN ZONES
@@ -152,8 +152,8 @@ $hd_fan_duty           = 70;    # HD fan duty cycle when script starts.
 #
 # 0 = FAN1..5
 # 1 = FANA
-$cpu_fan_zone = 0;
-$hd_fan_zone  = 1;
+$cpu_fan_zone = 1;
+$hd_fan_zone  = 0;
 
 
 ## FAN HEADERS
@@ -161,8 +161,8 @@ $hd_fan_zone  = 1;
 ## cpu_fan_header should be in the cpu_fan_zone
 ## hd_fan_header should be in the hd_fan_zone
 $cpu_fan_header = "FAN2";                 # used for printing to standard output for debugging   
-$hd_fan_header  = "FANB";                 # used for printing to standard output for debugging   
-@hd_fan_list = ("FANA", "FANB", "FANC");  # used for logging to file  
+$hd_fan_header  = "FAN2";                 # used for printing to standard output for debugging   
+@hd_fan_list = ("FAN1", "FAN2", "FAN3");  # used for logging to file  
 
 
 
@@ -240,40 +240,44 @@ sub main
     $temp_error = 0;
     my $integral = 0;
     $cpu_fan_override = 0;
+    $hd_fan_duty = $hd_fan_duty_start;
 
     ($hd_min_temp, $hd_max_temp, $hd_ave_temp_old, @hd_temps) = get_hd_temps();
     
     while()
     {
-        $old_cpu_fan_level = $cpu_fan_level;
-        $cpu_fan_level = control_cpu_fan( $old_cpu_fan_level );
+        if ($cpu_temp_control)
+        {
+            $old_cpu_fan_level = $cpu_fan_level;
+            $cpu_fan_level = control_cpu_fan( $old_cpu_fan_level );
         
-        if( $old_cpu_fan_level ne $cpu_fan_level )
-        {
-            $last_fan_level_change_time = time;
-        }
-
-        if( $cpu_fan_level eq "high" )
-        {
-            
-            if( $hd_fans_cool_cpu && !$override_hd_fan_level && ($last_cpu_temp >= $cpu_hd_override_temp || $last_cpu_temp == 0) )
+            if( $old_cpu_fan_level ne $cpu_fan_level )
             {
-                #override hd fan zone level, once we override we won't backoff until the cpu drops to below "high"
-                $override_hd_fan_level = 1;
-                dprint( 0, "CPU Temp: $last_cpu_temp >= $cpu_hd_override_temp, Overiding HD fan zone to $hd_fan_duty_high%, \n" );
-                set_fan_zone_duty_cycle( $hd_fan_zone, $hd_fan_duty_high );
-                
                 $last_fan_level_change_time = time;
             }
-        }
-        elsif( $override_hd_fan_level )
-        {
-            #restore hd fan zone level;
-            $override_hd_fan_level = 0;
-            dprint( 0, "Restoring HD fan zone to $hd_fan_duty%\n" );
-            set_fan_zone_duty_cycle( $hd_fan_zone, $hd_fan_duty );    
+
+            if( $cpu_fan_level eq "high" )
+            {
             
-            $last_fan_level_change_time = time;
+                if( $hd_fans_cool_cpu && !$override_hd_fan_level && ($last_cpu_temp >= $cpu_hd_override_temp || $last_cpu_temp == 0) )
+                {
+                    #override hd fan zone level, once we override we won't backoff until the cpu drops to below "high"
+                    $override_hd_fan_level = 1;
+                    dprint( 0, "CPU Temp: $last_cpu_temp >= $cpu_hd_override_temp, Overiding HD fan zone to $hd_fan_duty_high%, \n" );
+                    set_fan_zone_duty_cycle( $hd_fan_zone, $hd_fan_duty_high );
+                
+                    $last_fan_level_change_time = time;
+                }
+            }
+            elsif( $override_hd_fan_level )
+            {
+                #restore hd fan zone level;
+                $override_hd_fan_level = 0;
+                dprint( 0, "Restoring HD fan zone to $hd_fan_duty%\n" );
+                set_fan_zone_duty_cycle( $hd_fan_zone, $hd_fan_duty );    
+            
+                $last_fan_level_change_time = time;
+            }
         }
 
         # periodically determine hd fan zone level
@@ -336,12 +340,25 @@ sub main
             printf(LOG "%4i %6.2f %6.2f  %6.2f  %6.2f%\n", $cput, $P, $I, $D, $hd_duty);
         }
         
-        # verify_fan_speed_levels function is fairly complicated        
-        verify_fan_speed_levels(  $cpu_fan_level, $override_hd_fan_level ? $hd_fan_duty_high : $hd_fan_duty );
+        # verify_fan_speed_levels function is fairly complicated
+        if ($cpu_temp_control)
+        {
+            verify_fan_speed_levels(  $cpu_fan_level, $override_hd_fan_level ? $hd_fan_duty_high : $hd_fan_duty );
+        }
+        else
+        {
+            verify_fan_speed_levels2(  $cpu_fan_level, $override_hd_fan_level ? $hd_fan_duty_high : $hd_fan_duty );
+        }
         
-                    
-        # CPU temps can go from cool to hot in 2 seconds! so we only ever sleep for 1 second.
-        sleep 1;
+        if ($cpu_temp_control)
+        {
+            # CPU temps can go from cool to hot in 2 seconds! so we only ever sleep for 1 second.
+            sleep 1;
+        }
+        else
+        {
+            sleep $hd_polling_interval - 1;
+        }
 
     } # inf loop
 }
