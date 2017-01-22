@@ -143,7 +143,7 @@ $hd_fan_duty_high      = 100;    # percentage on, ie 100% is full speed.
 $hd_fan_duty_med_high  = 80;
 $hd_fan_duty_med_low   = 50;
 $hd_fan_duty_low       = 25;    # some 120mm fans stall below 30.
-$hd_fan_duty_start     = 65;    # HD fan duty cycle when script starts.
+$hd_fan_duty           = 65;    # HD fan duty cycle when script starts.
 
 
 ## FAN ZONES
@@ -241,7 +241,7 @@ sub main
     $temp_error = 0;
     my $integral = 0;
     $cpu_fan_override = 0;
-    my $hd_fan_duty = $hd_fan_duty_start;
+    # my $hd_fan_duty = $hd_fan_duty_start;
 
     ($hd_min_temp, $hd_max_temp, $hd_ave_temp_old, @hd_temps) = get_hd_temps();
     
