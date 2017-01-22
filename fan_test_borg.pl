@@ -284,7 +284,7 @@ sub main
         # periodically determine hd fan zone level
         
         my $check_time = time;
-        if( $check_time - $last_hd_check_time > $hd_polling_interval )
+        if( $check_time - $last_hd_check_time >= $hd_polling_interval )
         {
             $last_hd_check_time = $check_time;
             @last_hd_list = @hd_list;
@@ -358,7 +358,7 @@ sub main
         }
         else
         {
-            sleep $hd_polling_interval - 1;
+            sleep $hd_polling_interval - 5;
         }
 
     } # inf loop
