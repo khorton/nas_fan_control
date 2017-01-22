@@ -71,10 +71,10 @@
 ## DEBUG LEVEL
 ## 0 means no debugging. 1,2,3,4 provide more verbosity
 ## You should run this script in at least level 1 to verify its working correctly on your system
-$debug = 1;
+$debug = 0;
 
 ## LOG
-$log = '/root/fan_control2.log';
+$log = '/root/fan_control.log';
 $log_temp_summary_only = 1; # 1 if not logging individual HD temperatures.  0 if logging temp of each HD
 
 ## CPU THRESHOLD TEMPS
@@ -114,6 +114,12 @@ $hd_cpu_override_duty_cycle = 95;  # when the HD duty cycle equals or exceeds th
 $cpu_temp_control = 0;  # 1 if the script will control a CPU fan to control CPU temperatures.  0 if the script only controls HD fans.
 
 ## PID CONTROL GAINS
+## If you were using the spinpid.sh PID control script published by @Glorious1 at the link below, you will need to adjust the value of $Kp
+## that you were using, as that script defined Kp in terms of the gain per one cycle around the loop, but this script defines it in terms
+## of the gain per minute.  Divide the Kp value from the spinpid.sh script by the time in minutes for checking hard drive temperatures. 
+## For example, if you used a gain of Kp = 8, and a T = 3 (3 minute interval), the new value is $Kp = 8/3.
+## Kd values from the spinpid.sh script can be used directly here.
+## https://forums.freenas.org/index.php?threads/script-to-control-fan-speed-in-response-to-hard-drive-temperatures.41294/page-4#post-285668
 $Kp = 8/3; # 5.333
 $Ki = 0;
 $Kd = 60;
