@@ -241,7 +241,7 @@ sub main
     $temp_error = 0;
     my $integral = 0;
     $cpu_fan_override = 0;
-    # my $hd_fan_duty = $hd_fan_duty_start;
+    $hd_fan_duty = $hd_fan_duty_start;
 
     ($hd_min_temp, $hd_max_temp, $hd_ave_temp_old, @hd_temps) = get_hd_temps();
     
