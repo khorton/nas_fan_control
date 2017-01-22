@@ -351,15 +351,17 @@ sub main
             verify_fan_speed_levels2( $hd_fan_duty );
         }
         
-        if ($cpu_temp_control)
-        {
-            # CPU temps can go from cool to hot in 2 seconds! so we only ever sleep for 1 second.
-            sleep 1;
-        }
-        else
-        {
-            sleep $hd_polling_interval - 5;
-        }
+#         if ($cpu_temp_control)
+#         {
+#             # CPU temps can go from cool to hot in 2 seconds! so we only ever sleep for 1 second.
+#             sleep 1;
+#         }
+#         else
+#         {
+#             sleep $hd_polling_interval - 1;
+#         }
+        # CPU temps can go from cool to hot in 2 seconds! so we only ever sleep for 1 second.
+        sleep 1;
 
     } # inf loop
 }
