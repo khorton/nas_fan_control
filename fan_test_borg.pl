@@ -113,9 +113,9 @@ $hd_cpu_override_duty_cycle = 95;  # when the HD duty cycle equals or exceeds th
 $cpu_temp_control = 0;  # 1 if the script will control a CPU fan to control CPU temperatures.  0 if the script only controls HD fans.
 
 ## PID CONTROL GAINS
-$Kp = 16/3; # 5.333
+$Kp = 8/3; # 5.333
 $Ki = 0;
-$Kd = 120;
+$Kd = 60;
 
 
 #######################
@@ -138,10 +138,10 @@ $fan_duty_low     = 30;
 
 ## HD FAN DUTY LEVELS
 ## These levels are used to control the HD fans
-$hd_fan_duty_high      = 100;    # percentage on, ie 100% is full speed.
+$hd_fan_duty_high      = 95;    # percentage on, ie 100% is full speed.
 # $hd_fan_duty_med_high  = 80;
 # $hd_fan_duty_med_low   = 50;
-$hd_fan_duty_low       = 25;    # some 120mm fans stall below 30.
+$hd_fan_duty_low       = 20;    # some 120mm fans stall below 30.
 $hd_fan_duty_start     = 40;    # HD fan duty cycle when script starts.
 
 
