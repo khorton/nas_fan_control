@@ -139,8 +139,8 @@ $fan_duty_low     = 30;
 ## HD FAN DUTY LEVELS
 ## These levels are used to control the HD fans
 $hd_fan_duty_high      = 100;    # percentage on, ie 100% is full speed.
-$hd_fan_duty_med_high  = 80;
-$hd_fan_duty_med_low   = 50;
+# $hd_fan_duty_med_high  = 80;
+# $hd_fan_duty_med_low   = 50;
 $hd_fan_duty_low       = 25;    # some 120mm fans stall below 30.
 $hd_fan_duty_start     = 40;    # HD fan duty cycle when script starts.
 
@@ -347,7 +347,7 @@ sub main
         }
         else
         {
-            verify_fan_speed_levels2(  $cpu_fan_level, $override_hd_fan_level ? $hd_fan_duty_high : $hd_fan_duty );
+            verify_fan_speed_levels2( $hd_fan_duty );
         }
         
         if ($cpu_temp_control)
@@ -452,127 +452,228 @@ sub get_hd_temps
 
 sub verify_fan_speed_levels
 {
-	my( $cpu_fan_level, $hd_fan_duty ) = @_;
-	dprint( 4, "verify_fan_speed_levels: cpu_fan_level: $cpu_fan_level, hd_fan_duty: $hd_fan_duty\n");
+    my( $cpu_fan_level, $hd_fan_duty ) = @_;
+    dprint( 4, "verify_fan_speed_levels: cpu_fan_level: $cpu_fan_level, hd_fan_duty: $hd_fan_duty\n");
 
-	my $extra_delay_before_next_check = 0;
-	
-	my $temp_time = time - $last_fan_level_change_time;
-	dprint( 4, "Time since last verify : $temp_time, last change: $last_fan_level_change_time, delay: $fan_speed_change_delay\n");
-	if( $temp_time > $fan_speed_change_delay )
-	{
-		# we've waited for the speed change to take effect.
-		
-		my $cpu_fan_speed = get_fan_speed("CPU");
-		if( $cpu_fan_speed < 0 )
-		{
-			dprint(1,"CPU Fan speed unavailable\n" );
-			$fan_unreadable_time = time if $fan_unreadable_time == 0;
-		}
-		
-		my $hd_fan_speed = get_fan_speed("HD");
-		if( $hd_fan_speed < 0 )
-		{
-			dprint(1,"HD Fan speed unavailable\n" );
-			$fan_unreadable_time = time if $fan_unreadable_time == 0;
-		}
-		
-		if( $hd_fan_speed < 0 || $cpu_fan_speed < 0 )
-		{
-			# one of the fans couldn't be reliably read
+    my $extra_delay_before_next_check = 0;
+    
+    my $temp_time = time - $last_fan_level_change_time;
+    dprint( 4, "Time since last verify : $temp_time, last change: $last_fan_level_change_time, delay: $fan_speed_change_delay\n");
+    if( $temp_time > $fan_speed_change_delay )
+    {
+        # we've waited for the speed change to take effect.
+        
+        my $cpu_fan_speed = get_fan_speed("CPU");
+        if( $cpu_fan_speed < 0 )
+        {
+            dprint(1,"CPU Fan speed unavailable\n" );
+            $fan_unreadable_time = time if $fan_unreadable_time == 0;
+        }
+        
+        my $hd_fan_speed = get_fan_speed("HD");
+        if( $hd_fan_speed < 0 )
+        {
+            dprint(1,"HD Fan speed unavailable\n" );
+            $fan_unreadable_time = time if $fan_unreadable_time == 0;
+        }
+        
+        if( $hd_fan_speed < 0 || $cpu_fan_speed < 0 )
+        {
+            # one of the fans couldn't be reliably read
 
-			my $temp_time = time - $fan_unreadable_time;
-			if( $temp_time > $bmc_reboot_grace_time )
-			{
-				#we've waited, and we still can't read fan speed.
-				dprint(0, "Fan speeds are unreadable after $bmc_reboot_grace_time seconds, rebooting BMC\n");
-				reset_bmc();
-				$fan_unreadable_time = 0;
-			}
-			else
-			{
-				dprint(2, "Fan speeds are unreadable after $temp_time seconds, will try again\n");	
-			}		
-		}
-		else
-		{
-			# we have no been able to read the fan speeds
+            my $temp_time = time - $fan_unreadable_time;
+            if( $temp_time > $bmc_reboot_grace_time )
+            {
+                #we've waited, and we still can't read fan speed.
+                dprint(0, "Fan speeds are unreadable after $bmc_reboot_grace_time seconds, rebooting BMC\n");
+                reset_bmc();
+                $fan_unreadable_time = 0;
+            }
+            else
+            {
+                dprint(2, "Fan speeds are unreadable after $temp_time seconds, will try again\n");  
+            }       
+        }
+        else
+        {
+            # we have no been able to read the fan speeds
 
-			my $cpu_fan_is_wrong = 0;
-			my $hd_fan_is_wrong = 0;	
-			
-			#verify cpu fans
-			if( $cpu_fan_level eq "high" && $cpu_fan_speed < $cpu_max_fan_speed )
-			{
-				dprint(0, "CPU fan speed should be high, but $cpu_fan_speed < $cpu_max_fan_speed.\n");
-				$cpu_fan_is_wrong=1;
-			}
-			elsif( $cpu_fan_level eq "low" && $cpu_fan_speed > $cpu_max_fan_speed )
-			{
-				dprint(0, "CPU fan speed should be low, but $cpu_fan_speed > $cpu_max_fan_speed.\n");
-				$cpu_fan_is_wrong=1;
-			}
-			
-			#verify hd fans
-			if( $hd_fan_duty >= $hd_fan_duty_high && $hd_fan_speed < $hd_max_fan_speed )
-			{
-				dprint(0, "HD fan speed should be high, but $hd_fan_speed < $hd_max_fan_speed.\n");
-				$hd_fan_is_wrong=1;
-			}
-			elsif( $hd_fan_duty <= $hd_fan_duty_low && $hd_fan_speed > $hd_max_fan_speed )
-			{
-				dprint(0, "HD fan speed should be low, but $hd_fan_speed > $hd_max_fan_speed.\n");
-				$hd_fan_is_wrong=1;
-			}
-			
-			#verify both fans are good
-			if( $cpu_fan_is_wrong || $hd_fan_is_wrong )
-			{
-				$bmc_fail_count++;
-				
-				dprint( 3, "bmc_fail_count:  $bmc_fail_count, bmc_fail_threshold: $bmc_fail_threshold\n");
-				if( $bmc_fail_count <= $bmc_fail_threshold )
-				{
-					#we'll try setting the fan speeds, and giving it another attempt
-					dprint(1, "Fan speeds are not where they should be, will try again.\n");
+            my $cpu_fan_is_wrong = 0;
+            my $hd_fan_is_wrong = 0;    
+            
+            #verify cpu fans
+            if( $cpu_fan_level eq "high" && $cpu_fan_speed < $cpu_max_fan_speed )
+            {
+                dprint(0, "CPU fan speed should be high, but $cpu_fan_speed < $cpu_max_fan_speed.\n");
+                $cpu_fan_is_wrong=1;
+            }
+            elsif( $cpu_fan_level eq "low" && $cpu_fan_speed > $cpu_max_fan_speed )
+            {
+                dprint(0, "CPU fan speed should be low, but $cpu_fan_speed > $cpu_max_fan_speed.\n");
+                $cpu_fan_is_wrong=1;
+            }
+            
+            #verify hd fans
+            if( $hd_fan_duty >= $hd_fan_duty_high && $hd_fan_speed < $hd_max_fan_speed )
+            {
+                dprint(0, "HD fan speed should be high, but $hd_fan_speed < $hd_max_fan_speed.\n");
+                $hd_fan_is_wrong=1;
+            }
+            elsif( $hd_fan_duty <= $hd_fan_duty_low && $hd_fan_speed > $hd_max_fan_speed )
+            {
+                dprint(0, "HD fan speed should be low, but $hd_fan_speed > $hd_max_fan_speed.\n");
+                $hd_fan_is_wrong=1;
+            }
+            
+            #verify both fans are good
+            if( $cpu_fan_is_wrong || $hd_fan_is_wrong )
+            {
+                $bmc_fail_count++;
+                
+                dprint( 3, "bmc_fail_count:  $bmc_fail_count, bmc_fail_threshold: $bmc_fail_threshold\n");
+                if( $bmc_fail_count <= $bmc_fail_threshold )
+                {
+                    #we'll try setting the fan speeds, and giving it another attempt
+                    dprint(1, "Fan speeds are not where they should be, will try again.\n");
 
-					set_fan_mode("full");
+                    set_fan_mode("full");
 
-					set_fan_zone_level( $cpu_fan_zone, $cpu_fan_level );
-					set_fan_zone_duty_cycle( $hd_fan_zone, $hd_fan_duty );
-				}
-				else
-				{
-					#time to reset the bmc
-					dprint(1, "Fan speeds are still not where they should be after $bmc_fail_count attempts, will reboot BMC.\n");
-					set_fan_mode("full");
-					reset_bmc();
-					$bmc_fail_count = 0;
-				}
-			}
-			else
-			{
-				#everything is good. We'll sit back for another minute.
+                    set_fan_zone_level( $cpu_fan_zone, $cpu_fan_level );
+                    set_fan_zone_duty_cycle( $hd_fan_zone, $hd_fan_duty );
+                }
+                else
+                {
+                    #time to reset the bmc
+                    dprint(1, "Fan speeds are still not where they should be after $bmc_fail_count attempts, will reboot BMC.\n");
+                    set_fan_mode("full");
+                    reset_bmc();
+                    $bmc_fail_count = 0;
+                }
+            }
+            else
+            {
+                #everything is good. We'll sit back for another minute.
 
-				dprint( 2, "Verified fan levels, CPU: $cpu_fan_speed, HD: $hd_fan_speed. All good.\n" );
-				$bmc_fail_count = 0; # we succeeded
+                dprint( 2, "Verified fan levels, CPU: $cpu_fan_speed, HD: $hd_fan_speed. All good.\n" );
+                $bmc_fail_count = 0; # we succeeded
 
-				$extra_delay_before_next_check = 60 - $fan_speed_change_delay; # lets give it a minute since it was good.
-			}	
+                $extra_delay_before_next_check = 60 - $fan_speed_change_delay; # lets give it a minute since it was good.
+            }   
 
-				
-			#reset our unreadable timer, since we read the fan speeds.
-			$fan_unreadable_time = 0;
-									
-		}
-			
-		#reset our timer, so that we'll wait before checking again.
-		$last_fan_level_change_time = time + $extra_delay_before_next_check; #another delay before checking please.
-	}
-	
-	return;
+                
+            #reset our unreadable timer, since we read the fan speeds.
+            $fan_unreadable_time = 0;
+                                    
+        }
+            
+        #reset our timer, so that we'll wait before checking again.
+        $last_fan_level_change_time = time + $extra_delay_before_next_check; #another delay before checking please.
+    }
+    
+    return;
 }
 
+sub verify_fan_speed_levels2
+{
+    my( $hd_fan_duty ) = @_;
+    dprint( 4, "verify_fan_speed_level: hd_fan_duty: $hd_fan_duty\n");
+
+    my $extra_delay_before_next_check = 0;
+    
+    my $temp_time = time - $last_fan_level_change_time;
+    dprint( 4, "Time since last verify : $temp_time, last change: $last_fan_level_change_time, delay: $fan_speed_change_delay\n");
+    if( $temp_time > $fan_speed_change_delay )
+    {
+        # we've waited for the speed change to take effect.
+        
+        my $hd_fan_speed = get_fan_speed("HD");
+        if( $hd_fan_speed < 0 )
+        {
+            dprint(1,"HD Fan speed unavailable\n" );
+            $fan_unreadable_time = time if $fan_unreadable_time == 0;
+        }
+        
+        if( $hd_fan_speed < 0 )
+        {
+            # one of the fans couldn't be reliably read
+
+            my $temp_time = time - $fan_unreadable_time;
+            if( $temp_time > $bmc_reboot_grace_time )
+            {
+                #we've waited, and we still can't read fan speed.
+                dprint(0, "Fan speeds are unreadable after $bmc_reboot_grace_time seconds, rebooting BMC\n");
+                reset_bmc();
+                $fan_unreadable_time = 0;
+            }
+            else
+            {
+                dprint(2, "Fan speeds are unreadable after $temp_time seconds, will try again\n");  
+            }       
+        }
+        else
+        {
+            # we have no been able to read the fan speeds
+
+            my $hd_fan_is_wrong = 0;    
+            
+            #verify hd fans
+            if( $hd_fan_duty >= $hd_fan_duty_high && $hd_fan_speed < $hd_max_fan_speed )
+            {
+                dprint(0, "HD fan speed should be high, but $hd_fan_speed < $hd_max_fan_speed.\n");
+                $hd_fan_is_wrong=1;
+            }
+            elsif( $hd_fan_duty <= $hd_fan_duty_low && $hd_fan_speed > $hd_max_fan_speed )
+            {
+                dprint(0, "HD fan speed should be low, but $hd_fan_speed > $hd_max_fan_speed.\n");
+                $hd_fan_is_wrong=1;
+            }
+            
+            #verify HD fans are good
+            if( $hd_fan_is_wrong )
+            {
+                $bmc_fail_count++;
+                
+                dprint( 3, "bmc_fail_count:  $bmc_fail_count, bmc_fail_threshold: $bmc_fail_threshold\n");
+                if( $bmc_fail_count <= $bmc_fail_threshold )
+                {
+                    #we'll try setting the fan speeds, and giving it another attempt
+                    dprint(1, "Fan speeds are not where they should be, will try again.\n");
+
+                    set_fan_mode("full");
+
+                    set_fan_zone_duty_cycle( $hd_fan_zone, $hd_fan_duty );
+                }
+                else
+                {
+                    #time to reset the bmc
+                    dprint(1, "Fan speeds are still not where they should be after $bmc_fail_count attempts, will reboot BMC.\n");
+                    set_fan_mode("full");
+                    reset_bmc();
+                    $bmc_fail_count = 0;
+                }
+            }
+            else
+            {
+                #everything is good. We'll sit back for another minute.
+
+                dprint( 2, "Verified fan levels, HD: $hd_fan_speed. All good.\n" );
+                $bmc_fail_count = 0; # we succeeded
+
+                $extra_delay_before_next_check = 60 - $fan_speed_change_delay; # lets give it a minute since it was good.
+            }   
+
+                
+            #reset our unreadable timer, since we read the fan speeds.
+            $fan_unreadable_time = 0;
+                                    
+        }
+            
+        #reset our timer, so that we'll wait before checking again.
+        $last_fan_level_change_time = time + $extra_delay_before_next_check; #another delay before checking please.
+    }
+    
+    return;
+}
 
 # need to pass in last $cpu_fan
 sub control_cpu_fan
@@ -584,7 +685,7 @@ sub control_cpu_fan
 
     my $cpu_fan_level = decide_cpu_fan_level( $cpu_temp, $old_cpu_fan_level );
 
-	if( $old_cpu_fan_level ne $cpu_fan_level )
+    if( $old_cpu_fan_level ne $cpu_fan_level )
     {
             dprint( 1, "CPU Fan changing... ($cpu_fan_level)\n");
         set_fan_zone_level( $cpu_fan_zone, $cpu_fan_level );    
