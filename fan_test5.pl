@@ -143,7 +143,7 @@ $hd_fan_duty_high      = 100;    # percentage on, ie 100% is full speed.
 $hd_fan_duty_med_high  = 80;
 $hd_fan_duty_med_low   = 50;
 $hd_fan_duty_low       = 25;    # some 120mm fans stall below 30.
-$hd_fan_duty           = 65;    # HD fan duty cycle when script starts.
+$hd_fan_duty_start     = 65;    # HD fan duty cycle when script starts.
 
 
 ## FAN ZONES
@@ -206,7 +206,7 @@ $bmc_fail_threshold    = 1;     # will retry n times before rebooting
 $cpu_max_fan_speed *= 0.8;
 $hd_max_fan_speed *= 0.8;
 
-$hd_duty = $hd_fan_duty;
+$hd_duty = $hd_fan_duty_start;
 
 #fan/bmc verification globals/timers
 $last_fan_level_change_time = 0;        # the time when we changed a fan level last
