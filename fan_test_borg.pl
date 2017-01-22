@@ -56,6 +56,7 @@
 #            and HD fans are set to 100%
 #            Retain float value of fan duty cycle between loop cycles, so that small duty cycle corrections 
 #            accumulate and eventually push the duty cycle to the next integer value.
+# 2017-01-18 Added log file
 # 2017-01-21 Refactored code to bump up CPU fan to help cool HD.  Drop the variabe CPU duty cycle, and just set to High,
 #            Added log file option without temps for every HD.
 #
@@ -205,7 +206,7 @@ $bmc_fail_threshold    = 1;     # will retry n times before rebooting
 $cpu_max_fan_speed *= 0.8;
 $hd_max_fan_speed *= 0.8;
 
-$hd_duty = $hd_fan_duty;
+$hd_duty = $hd_fan_duty_start;
 
 #fan/bmc verification globals/timers
 $last_fan_level_change_time = 0;        # the time when we changed a fan level last
