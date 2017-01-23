@@ -116,7 +116,7 @@ $cpu_temp_control = 1;  # 1 if the script will control a CPU fan to control CPU 
 ## PID CONTROL GAINS
 $Kp = 16/3; # 5.333
 $Ki = 0;
-$Kd = 150;
+$Kd = 120;
 
 
 #######################
