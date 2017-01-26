@@ -104,14 +104,14 @@ $cpu_hd_override_temp = 62;
 ## If your HD fans contribute to the cooling of your CPU you should set this value.
 ## It will mean when you CPU heats up your HD fans will be turned up to help cool the
 ## case/cpu. This would only not apply if your HDs and fans are in a separate thermal compartment.
-$hd_fans_cool_cpu = 1;      # 1 if the hd fans should spin up to cool the cpu, 0 otherwise
+$hd_fans_cool_cpu = 0;      # 1 if the hd fans should spin up to cool the cpu, 0 otherwise
 
 ## HD FAN DUTY CYCLE TO OVERRIDE CPU FANS
 $cpu_fans_cool_hd            = 1;  # 1 if the cpu fans should spin up to cool the HDs, when needed.  0 otherwise
 $hd_cpu_override_duty_cycle = 95;  # when the HD duty cycle equals or exceeds this value, the CPU fans may be overridden to help cool HDs
 
 ## CPU TEMP CONTROL
-$cpu_temp_control = 0;  # 1 if the script will control a CPU fan to control CPU temperatures.  0 if the script only controls HD fans.
+$cpu_temp_control = 1;  # 1 if the script will control a CPU fan to control CPU temperatures.  0 if the script only controls HD fans.
 
 ## PID CONTROL GAINS
 ## If you were using the spinpid.sh PID control script published by @Glorious1 at the link below, you will need to adjust the value of $Kp
@@ -133,15 +133,15 @@ $Kd = 60;
 ## You need to determine the actual max fan speeds that are achieved by the fans
 ## Connected to the cpu_fan_header and the hd_fan_header.
 ## These values are used to verify high/low fan speeds and trigger a BMC reset if necessary.
-$cpu_max_fan_speed    = 1800;
+$cpu_max_fan_speed    = 5500;
 $hd_max_fan_speed     = 1500;
 
 
 ## CPU FAN DUTY LEVELS
 ## These levels are used to control the CPU fans
 $fan_duty_high    = 100;        # percentage on, ie 100% is full speed.
-$fan_duty_med     = 60;
-$fan_duty_low     = 30;
+$fan_duty_med     = 75;
+$fan_duty_low     = 40;
 
 ## HD FAN DUTY LEVELS
 ## These levels are used to control the HD fans
@@ -169,7 +169,7 @@ $hd_fan_zone  = 0;
 ## hd_fan_header should be in the hd_fan_zone
 $cpu_fan_header = "FAN2";                 # used for printing to standard output for debugging   
 $hd_fan_header  = "FAN2";                 # used for printing to standard output for debugging   
-@hd_fan_list = ("FAN1", "FAN2", "FAN3");  # used for logging to file  
+@hd_fan_list = ("FAN2", "FAN3");          # used for logging to file  
 
 
 
