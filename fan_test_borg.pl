@@ -71,7 +71,7 @@
 ## DEBUG LEVEL
 ## 0 means no debugging. 1,2,3,4 provide more verbosity
 ## You should run this script in at least level 1 to verify its working correctly on your system
-$debug = 0;
+$debug = 1;
 
 ## LOG
 $log = '/root/fan_control.log';
