@@ -71,11 +71,14 @@
 ## DEBUG LEVEL
 ## 0 means no debugging. 1,2,3,4 provide more verbosity
 ## You should run this script in at least level 1 to verify its working correctly on your system
-$debug = 1;
+$debug = 0;
 
 ## LOG
 $log = '/root/fan_control.log';
 $log_temp_summary_only = 1; # 1 if not logging individual HD temperatures.  0 if logging temp of each HD
+$log_header_hourly_interval = 2; # number of hours between log headers.  Valid options are 1, 2, 3, 4, 6 & 12.
+                                 # log headers will always appear at the start of a log, at midnight and any 
+                                 # time the list of HDs changes (if individual HD temperatures are logged)
 
 ## CPU THRESHOLD TEMPS
 ## A modern CPU can heat up from 35C to 60C in a second or two. The fan duty cycle is set based on this
@@ -223,6 +226,7 @@ $bmc_fail_count             = 0;        # how many times the fans failed verific
 $last_cpu_temp = 0;
 
 use POSIX qw(strftime);
+use Time::Local;
 
 # start the controller
 main();
@@ -236,6 +240,21 @@ sub main
     # Print Log Header
     @hd_list = get_hd_list();
     print_log_header(@hd_list);
+    # current time
+    ($sec,$min,$hour,$day,$month,$year,$wday,$yday,$isdst) = localtime(time);
+    $next_log_hour = ( int( $hour/$log_header_hourly_interval ) + 1 ) * $log_header_hourly_interval;
+    
+    if ( $next_log_hour >= 24 )
+    {
+        # next log time is after midnight.  Roll back to previous log time, calcuate Unix epoch seconds, and add required seconds to get next log time
+        $next_log_hour -= $log_header_hourly_interval;
+        $next_log_time = timelocal(0,0,$next_log_hour,$day,$month,$year) + 3600 * $log_header_hourly_interval;
+    }
+    else
+    {
+        # next log time in seconds past Unix epoch
+        $next_log_time = timelocal(0,0,$next_log_hour,$day,$month,$year);
+    }
     
     # need to go to Full mode so we have unfettered control of Fans
     set_fan_mode("full");
@@ -316,6 +335,13 @@ sub main
                 # print new disk iD header if it has changed (e.g. hot swap insert or remove)
                 @hd_list = print_log_header(@hd_list);
             }
+            elsif ( $check_time >= $next_log_time )
+            {
+                # time to print a new log header
+                @hd_list = print_log_header(@hd_list);
+                $next_log_time += 3600 * $log_header_hourly_interval;
+            }
+            
             my $timestring = build_time_string();
             # ($hd_min_temp, $hd_max_temp, $hd_ave_temp, @hd_temps) = get_hd_temps();
             
