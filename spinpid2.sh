@@ -236,14 +236,14 @@ DEVLIST1=$(/sbin/camcontrol devlist)
 # You could use another strategy, e.g., find something in the camcontrol devlist
 # output that is unique to the drives you want, for instance only WDC drives:
 # if [[ $LINE != *"WDC"* ]] . . .
-DEVLIST="$(echo "$DEVLIST1"|sed '/KINGSTON/d;/ADATA/d;/SanDisk/d')"
+DEVLIST="$(echo "$DEVLIST1"|sed '/KINGSTON/d;/ADATA/d;/SanDisk/d;/SSD/d')"
 DEVCOUNT=$(echo "$DEVLIST" | wc -l)
 
 # This is only needed if DUTY_* is not read by ipmitool (i.e.
 # we disable DUTY_* lines in read_fan_data and
 # assume duty is what we last set.  In that case we need to 
 # start with a guess so we don't spend so many cycles working up from 0.
-DUTY_PER=40
+DUTY_PER=65
 
 read_fan_data # Get mode and rpm before script changes
 
