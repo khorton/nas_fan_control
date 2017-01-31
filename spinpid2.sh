@@ -18,8 +18,8 @@ exec > >(tee -i $LOG) 2>&1
 # zone 1 (FANA-x) is for Peripheral (presumably including drives)
 # Reverse that here if you want (i.e, if you hook drive cooling fans
 # to FAN1-4 and CPU fan to FANA, set ZONE_CPU=1, ZONE_PER=0)
-ZONE_CPU=1
-ZONE_PER=0
+ZONE_CPU=0
+ZONE_PER=1
 
 FAN_MIN=25  # Fan minimum duty cycle (%) (to avoid stalling)
 
