@@ -203,7 +203,7 @@ function adjust_fans {
    DUTY_LAST=$3
 
    # Don't allow duty cycle below FAN_MIN nor above 95%
-   if [[ $DUTY -gt 95 ]]; then DUTY=95; fi
+   if [[ $DUTY -gt 100 ]]; then DUTY=100; fi
    if [[ $DUTY -lt $FAN_MIN ]]; then DUTY=$FAN_MIN; fi
    
    # Change if different from last duty, update last duty.
