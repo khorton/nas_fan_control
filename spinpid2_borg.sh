@@ -39,7 +39,7 @@ Kd=60   #  Derivative tunable constant (for drives)
 #  Time interval for checking CPU (seconds).  10 or 15
 #  may be appropriate, but your CPU may need more frequent
 #  monitoring.
-CPU_T=5
+CPU_T=10
 
 #  Reference temperature (C) for scaling CPU_DUTY (NOT a setpoint).
 #  At and below this temperature, CPU will demand minimum 
