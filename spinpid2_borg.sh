@@ -243,7 +243,7 @@ DEVCOUNT=$(echo "$DEVLIST" | wc -l)
 # we disable DUTY_* lines in read_fan_data and
 # assume duty is what we last set.  In that case we need to 
 # start with a guess so we don't spend so many cycles working up from 0.
-DUTY_PER=65
+DUTY_PER=40
 
 read_fan_data # Get mode and rpm before script changes
 
