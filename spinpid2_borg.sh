@@ -18,8 +18,8 @@ exec > >(tee -i $LOG) 2>&1
 # zone 1 (FANA-x) is for Peripheral (presumably including drives)
 # Reverse that here if you want (i.e, if you hook drive cooling fans
 # to FAN1-4 and CPU fan to FANA, set ZONE_CPU=1, ZONE_PER=0)
-ZONE_CPU=0
-ZONE_PER=1
+ZONE_CPU=1
+ZONE_PER=0
 
 FAN_MIN=25  # Fan minimum duty cycle (%) (to avoid stalling)
 
@@ -30,9 +30,9 @@ SP=36   #  Setpoint mean drive temperature (C)
 #  Time interval for checking drives (minutes).  Drives change
 #  temperature slowly; 5 minutes is probably overkill.
 T=3
-Kp=16    #  Proportional tunable constant (for drives)
+Kp=8    #  Proportional tunable constant (for drives)
 Ki=0    #  Integral tunable constant (for drives)
-Kd=120   #  Derivative tunable constant (for drives)
+Kd=60   #  Derivative tunable constant (for drives)
 
 #################  CPU SETTINGS ################
 
@@ -284,14 +284,14 @@ while [ 1 ] ; do
 
       # Every cycle but the first, reset BMC if fans seem stuck and not obeying
       # This is pointless if we can't read the real DUTY_*
-#      if [[ $CPU_TEMP<$CPU_REF && $DUTY_CPU>90 ]] || [[ $DUTY_CPU<$FAN_MIN ]]; then
-#         $IPMITOOL bmc reset warm
-#         printf "\n%s\n" "CPU_TEMP=$CPU_TEMP; DUTY_CPU=$DUTY_CPU I reset the BMC because DUTY_CPU was much too high for CPU_TEMP or below FAN_MIN!"
-#      fi
-#      if [[ $Tmean<$SP && $DUTY_PER>90 ]] || [[ $DUTY_PER<$FAN_MIN ]]; then
-#         $IPMITOOL bmc reset warm
-#         printf "\n%s\n" "I reset the BMC because DUTY_PER was much too high for Tmean or below FAN_MIN!"
-#      fi
+      if [[ $CPU_TEMP<$CPU_REF && $DUTY_CPU>90 ]] || [[ $DUTY_CPU<$FAN_MIN ]]; then
+         $IPMITOOL bmc reset warm
+         printf "\n%s\n" "CPU_TEMP=$CPU_TEMP; DUTY_CPU=$DUTY_CPU I reset the BMC because DUTY_CPU was much too high for CPU_TEMP or below FAN_MIN!"
+      fi
+      if [[ $Tmean<$SP && $DUTY_PER>90 ]] || [[ $DUTY_PER<$FAN_MIN ]]; then
+         $IPMITOOL bmc reset warm
+         printf "\n%s\n" "I reset the BMC because DUTY_PER was much too high for Tmean or below FAN_MIN!"
+      fi
    fi
 
    FIRST_TIME=0
