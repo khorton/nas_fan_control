@@ -187,7 +187,7 @@ $ipmitool = "/usr/local/bin/ipmitool";
 ## HD POLLING INTERVAL
 ## The controller will only poll the harddrives periodically. Since hard drives change temperature slowly
 ## this is a good thing. 180 seconds is a good value.
-$hd_polling_interval = 90;    # seconds
+$hd_polling_interval = 180;    # seconds
 
 ## FAN SPEED CHANGE DELAY TIME
 ## It takes the fans a few seconds to change speeds, we allow a grace before verifying. If we fail the verify
