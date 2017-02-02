@@ -94,10 +94,10 @@ function read_fan_data {
    # Read duty cycles, convert to decimal.
    # Duty cycle isn't provided reliably by all boards.  If necessary, 
    # disable the DUTY_ lines, and we'll just assume it is what we last set.
-#   DUTY_CPU=$($IPMITOOL raw 0x30 0x70 0x66 0 $ZONE_CPU) # in hex with leading space
-#   DUTY_CPU=$((0x$(echo $DUTY_CPU)))  # strip leading space and decimalize
-#   DUTY_PER=$($IPMITOOL raw 0x30 0x70 0x66 0 $ZONE_PER) # in hex with leading space
-#   DUTY_PER=$((0x$(echo $DUTY_PER)))  # strip leading space and decimalize
+   DUTY_CPU=$($IPMITOOL raw 0x30 0x70 0x66 0 $ZONE_CPU) # in hex with leading space
+   DUTY_CPU=$((0x$(echo $DUTY_CPU)))  # strip leading space and decimalize
+   DUTY_PER=$($IPMITOOL raw 0x30 0x70 0x66 0 $ZONE_PER) # in hex with leading space
+   DUTY_PER=$((0x$(echo $DUTY_PER)))  # strip leading space and decimalize
 
    # Read fan mode, convert to decimal, get text equivalent.
    MODE=$($IPMITOOL raw 0x30 0x45 0) # in hex with leading space
@@ -284,14 +284,14 @@ while [ 1 ] ; do
 
       # Every cycle but the first, reset BMC if fans seem stuck and not obeying
       # This is pointless if we can't read the real DUTY_*
-#      if [[ $CPU_TEMP<$CPU_REF && $DUTY_CPU>90 ]] || [[ $DUTY_CPU<$FAN_MIN ]]; then
-#         $IPMITOOL bmc reset warm
-#         printf "\n%s\n" "CPU_TEMP=$CPU_TEMP; DUTY_CPU=$DUTY_CPU I reset the BMC because DUTY_CPU was much too high for CPU_TEMP or below FAN_MIN!"
-#      fi
-#      if [[ $Tmean<$SP && $DUTY_PER>90 ]] || [[ $DUTY_PER<$FAN_MIN ]]; then
-#         $IPMITOOL bmc reset warm
-#         printf "\n%s\n" "I reset the BMC because DUTY_PER was much too high for Tmean or below FAN_MIN!"
-#      fi
+      if [[ $CPU_TEMP<$CPU_REF && $DUTY_CPU>90 ]] || [[ $DUTY_CPU<$FAN_MIN ]]; then
+         $IPMITOOL bmc reset warm
+         printf "\n%s\n" "CPU_TEMP=$CPU_TEMP; DUTY_CPU=$DUTY_CPU I reset the BMC because DUTY_CPU was much too high for CPU_TEMP or below FAN_MIN!"
+      fi
+      if [[ $Tmean<$SP && $DUTY_PER>90 ]] || [[ $DUTY_PER<$FAN_MIN ]]; then
+         $IPMITOOL bmc reset warm
+         printf "\n%s\n" "I reset the BMC because DUTY_PER was much too high for Tmean or below FAN_MIN!"
+      fi
    fi
 
    FIRST_TIME=0
