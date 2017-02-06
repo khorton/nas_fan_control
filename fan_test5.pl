@@ -91,7 +91,7 @@ $low_cpu_temp = 35;        # will go LOW when we fall below 35 again
 ## This is the temperature that we regard as being uncomfortable. The higher this is the
 ## more silent your system.
 ## Note, it is possible for your HDs to go above this... but if your cooling is good, they shouldn't.
-$hd_ave_target = 36.25;    # PID control loop will target this average temperature
+$hd_ave_target = 36.5;    # PID control loop will target this average temperature
 $hd_max_allowed_temp = 40; # celsius. PID control aborts and fans set to 100% duty cycle when a HD hits this temp.
                            # This ensures that no matter how poorly chosen the PID gains are, or how much of a spread
                            # there is between the average HD temperature and the maximum HD temperature, the HD fans 
@@ -125,7 +125,7 @@ $cpu_temp_control = 1;  # 1 if the script will control a CPU fan to control CPU 
 ## https://forums.freenas.org/index.php?threads/script-to-control-fan-speed-in-response-to-hard-drive-temperatures.41294/page-4#post-285668
 $Kp = 16/3; # 5.333
 $Ki = 0;
-$Kd = 180;
+$Kd = 120;
 
 
 #######################
@@ -187,7 +187,7 @@ $ipmitool = "/usr/local/bin/ipmitool";
 ## HD POLLING INTERVAL
 ## The controller will only poll the harddrives periodically. Since hard drives change temperature slowly
 ## this is a good thing. 180 seconds is a good value.
-$hd_polling_interval = 90;    # seconds
+$hd_polling_interval = 180;    # seconds
 
 ## FAN SPEED CHANGE DELAY TIME
 ## It takes the fans a few seconds to change speeds, we allow a grace before verifying. If we fail the verify
