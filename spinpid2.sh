@@ -1,6 +1,6 @@
 #!/usr/local/bin/bash
 # spinpid2.sh for dual fan zones.
-VERSION="2017-01-20"
+VERSION="2017-02-05"
 # Run as superuser. See notes at end.
 
 ##############################################
@@ -13,6 +13,8 @@ VERSION="2017-01-20"
 # If you want to append to existing log, add '-a' to the tee command.
 LOG=/root/spinpid2.log  # Change to your desired log location/name
 exec > >(tee -i $LOG) 2>&1
+# interim CPU updates are sent to a separate log
+CPU_LOG=/root/cpu.log
 
 # Supermicro says zone 0 (FAN1-x) is for CPU/system, and
 # zone 1 (FANA-x) is for Peripheral (presumably including drives)
@@ -22,6 +24,7 @@ ZONE_CPU=0
 ZONE_PER=1
 
 FAN_MIN=25  # Fan minimum duty cycle (%) (to avoid stalling)
+FAN_MAX=100 # Fan maximum duty cycle (%) (to avoid zombie apocalypse)
 
 #################  DRIVE SETTINGS ################
 
@@ -42,7 +45,7 @@ Kd=120   #  Derivative tunable constant (for drives)
 CPU_T=5
 
 #  Reference temperature (C) for scaling CPU_DUTY (NOT a setpoint).
-#  At and below this temperature, CPU will demand minimum 
+#  At and below this temperature, CPU will demand minimum
 #  fan speed (FAN_MIN above).  Integer only!
 CPU_REF=35
 #  Scalar for scaling CPU_DUTY. Integer only!
@@ -76,14 +79,14 @@ function get_disk_name {
 ############################################################
 function print_header {
    DATE=$(date +"%A, %b %d")
-   let "SPACES = DEVCOUNT * 5 + 47"  # 5 spaces per drive
-   printf "\n%-*s %3s %29s %16s %s \n" $SPACES "$DATE" "CPU" "Curr_RPM____________________" "New_Fan%" "Interim CPU"
+   let "SPACES = DEVCOUNT * 5 + 48"  # 5 spaces per drive
+   printf "\n%-*s %3s %29s %16s %s \n" $SPACES "$DATE" "CPU" "Curr_RPM____________________" "New_Fan%"
    echo -n "          "
    while read LINE ; do
       get_disk_name
       printf "%-5s" $DEVID
    done <<< "$DEVLIST"             # while statement works on DEVLIST
-   printf "%4s %5s %5s %6s %5s %6s %3s %5s %5s %5s %5s %5s %-7s %s %-4s %s" "Tmax" "Tmean" "ERRc" "P" "I" "D" "TEMP" "FANA" "FAN1" "FAN2" "FAN3" "FAN4" "MODE" "CPU" "PER" "Adjustments"
+   printf "%4s %5s %6s %6s %5s %6s %3s %5s %5s %5s %5s %5s %-7s %s %-4s" "Tmax" "Tmean" "ERRc" "P" "I" "D" "TEMP" "FANA" "FAN1" "FAN2" "FAN3" "FAN4" "MODE" "CPU" "PER"
 }
 
 #################################################
@@ -92,12 +95,12 @@ function print_header {
 function read_fan_data {
 
    # Read duty cycles, convert to decimal.
-   # Duty cycle isn't provided reliably by all boards.  If necessary, 
+   # Duty cycle isn't provided reliably by all boards.  If necessary,
    # disable the DUTY_ lines, and we'll just assume it is what we last set.
    DUTY_CPU=$($IPMITOOL raw 0x30 0x70 0x66 0 $ZONE_CPU) # in hex with leading space
    DUTY_CPU=$((0x$(echo $DUTY_CPU)))  # strip leading space and decimalize
-   DUTY_PER=$($IPMITOOL raw 0x30 0x70 0x66 0 $ZONE_PER) # in hex with leading space
-   DUTY_PER=$((0x$(echo $DUTY_PER)))  # strip leading space and decimalize
+   DUTY_PER=$($IPMITOOL raw 0x30 0x70 0x66 0 $ZONE_PER)
+   DUTY_PER=$((0x$(echo $DUTY_PER)))
 
    # Read fan mode, convert to decimal, get text equivalent.
    MODE=$($IPMITOOL raw 0x30 0x45 0) # in hex with leading space
@@ -126,21 +129,19 @@ function read_fan_data {
 # Send to function adjust_fans.
 ##############################################
 function CPU_check_adjust {
-	CPU_TEMP=$($IPMITOOL sdr | grep "CPU Temp" | grep -Eo '[0-9]{2,5}')
-#	CPU_TEMP=$(sysctl -a | grep "cpu\.0\.temp" | awk -F ' ' '{print $2}' | awk -F '.' '{print$1}')
-# 	DUTY_CPU=$( echo "scale=2; ($CPU_TEMP - $CPU_REF) * $CPU_SCALE + $FAN_MIN" | bc )
-# 	DUTY_CPU=$( printf %0.f $DUTY_CPU )  # round
+        CPU_TEMP=$($IPMITOOL sdr | grep "CPU Temp" | grep -Eo '[0-9]{2,5}')
+        # This will break if settings have non-integers
+        let DUTY_CPU=(CPU_TEMP-CPU_REF)*CPU_SCALE+FAN_MIN
 
-	# This will break if settings have non-integers
-	let DUTY_CPU=(CPU_TEMP-CPU_REF)*CPU_SCALE+FAN_MIN
-
-	adjust_fans $ZONE_CPU $DUTY_CPU $DUTY_CPU_LAST
+        adjust_fans $ZONE_CPU $DUTY_CPU $DUTY_CPU_LAST
+        
+        print_interim_CPU | tee -a $CPU_LOG >/dev/null
 }
 
 ##############################################
 # function DRIVES_check_adjust
-# Print time on new log line. 
-# Go through each drive, getting and printing 
+# Print time on new log line.
+# Go through each drive, getting and printing
 # status and temp.  Calculate max and mean
 # temp, then calculate PID and new duty.
 # Call adjust_fans.
@@ -153,17 +154,18 @@ function DRIVES_check_adjust {
    i=0  # count number of spinning drives
    while read LINE ; do
       get_disk_name
-      TEMP=$(/usr/local/sbin/smartctl -a -n standby "/dev/$DEVID" | grep "Temperature_Celsius" | grep -o "..$")
       /usr/local/sbin/smartctl -n standby "/dev/$DEVID" > /var/tempfile
       RETURN=$?               # need to preserve because $? changes with each 'if'
+      TEMP=""
       if [[ $RETURN == "0" ]] ; then
+         TEMP=$(/usr/local/sbin/smartctl -a -n standby "/dev/$DEVID" | grep "Temperature_Celsius" | grep -o "..$")
          STATE="*"  # spinning
       elif [[ $RETURN == "2" ]] ; then
          STATE="_"  # standby
       else
          STATE="?"  # state unknown
       fi
-      printf "%s%-2d  " "$STATE" $TEMP
+      printf "%s%2s  " "$STATE" "${TEMP:---}"
       # Update temperatures each drive; spinners only
       if [ "$STATE" == "*" ] ; then
          let "Tsum += $TEMP"
@@ -171,28 +173,42 @@ function DRIVES_check_adjust {
          let "i += 1"
       fi
    done <<< "$DEVLIST"
-   
-   # summarize, calculate PID and print Tmax and Tmean
-   Tmean=$(echo "scale=3; $Tsum / $i" | bc)
-   ERRp=$ERRc
-   ERRc=$(echo "scale=2; $Tmean - $SP" | bc)
-   ERR=$(echo "scale=2; $ERRc * $T + $I" | bc)
-   P=$(echo "scale=2; $Kp * $ERRc" | bc)
-   I=$(echo "scale=2; $Ki * $ERR" | bc)
-   D=$(echo "scale=2; $Kd * ($ERRc - $ERRp) / $T" | bc)
-   PID=$(echo "scale=2; $P + $I + $D" | bc)  # add 3 corrections
-   PID=$(printf %0.f $PID)  # round
-   # print current Tmax, Tmean
-   printf "^%-3d %5.2f" $Tmax $Tmean 
 
-   let "DUTY_PER = $DUTY_PER_LAST + $PID"
+   # if no disks are spinning
+   if [ $i -eq 0 ]; then
+      Tmean=""; Tmax=""; P=""; D=""; ERRc=""
+      DUTY_PER=$FAN_MIN
+   else
+      # summarize, calculate PID and print Tmax and Tmean
+      Tmean=$(echo "scale=3; $Tsum / $i" | bc)
+      ERRp=$ERRc
+      ERRc=$(echo "scale=2; ($Tmean - $SP) / 1" | bc)
+      ERR=$(echo "$ERRc * $T + $I" | bc)
+      P=$(echo "scale=2; ($Kp * $ERRc) / 1" | bc)
+      I=$(echo "scale=2; ($Ki * $ERR) / 1" | bc)
+      D=$(echo "scale=2; $Kd * ($ERRc - $ERRp) / $T" | bc)
+      PID=$(echo "$P + $I + $D" | bc)  # add 3 corrections
+      PID=$(printf %0.f $PID)  # round
+      Tmean=$(printf %0.2f $Tmean)  # round for printing
+      let "DUTY_PER = $DUTY_PER_LAST + $PID"
+   fi
+
+   # DIAGNOSTIC variables - uncomment for troubleshooting:
+   # printf "\n DUTY_PER=%s, DUTY_PER_LAST=%s, DUTY=%s, Tmean=%s \n" "${DUTY_PER:---}" "${DUTY_PER_LAST:---}" "${DUTY:---}" "${Tmean:---}"
 
    # pass to the function adjust_fans
    adjust_fans $ZONE_PER $DUTY_PER $DUTY_PER_LAST
+   
+   # DIAGNOSTIC variables - uncomment for troubleshooting:
+   # printf "\n DUTY_PER=%s, DUTY_PER_LAST=%s, DUTY=%s, Tmean=%s \n" "${DUTY_PER:---}" "${DUTY_PER_LAST:---}" "${DUTY:---}" "${Tmean:---}"
+
+   # print current Tmax, Tmean
+   printf "^%-3s %5s" "${Tmax:---}" "${Tmean:----}"
 }
 
+
 ##############################################
-# function adjust_fans 
+# function adjust_fans
 # Zone, new duty, and last duty are passed as parameters
 ##############################################
 function adjust_fans {
@@ -203,22 +219,32 @@ function adjust_fans {
    DUTY_LAST=$3
 
    # Don't allow duty cycle below FAN_MIN nor above 95%
-   if [[ $DUTY -gt 100 ]]; then DUTY=100; fi
+   if [[ $DUTY -gt $FAN_MAX ]]; then DUTY=$FAN_MAX; fi
    if [[ $DUTY -lt $FAN_MIN ]]; then DUTY=$FAN_MIN; fi
-   
+
    # Change if different from last duty, update last duty.
    if [[ $DUTY -ne $DUTY_LAST ]]; then
       # Set new duty cycle. "echo -n ``" prevents newline generated in log
       echo -n `$IPMITOOL raw 0x30 0x70 0x66 1 $ZONE $DUTY`
       #  If interim CPU adjustment, print new CPU duty cycle
-      if [[ ZONE -eq ZONE_CPU ]]; then 
-      	DUTY_CPU_LAST=$DUTY
-      	# add condition "&& CPU_LOOPS -lt xx" to avoid excessive interim updates
-      	if [[ FIRST_TIME -eq 0 ]]; then printf "%d " $DUTY; fi
-      else 
+      if [[ ZONE -eq ZONE_CPU ]]; then
+        DUTY_CPU_LAST=$DUTY
+      else
         DUTY_PER_LAST=$DUTY
       fi
    fi
+}
+
+##############################################
+# function print_interim_CPU 
+# Sent to a separate file by the call
+# in adust_fans{}
+##############################################
+function print_interim_CPU {
+   RPM_FANA=$(echo "$($IPMITOOL sdr)" | grep "FANA" | grep -Eo '[0-9]{3,5}')
+   # print time on each line
+   TIME=$(date "+%H:%M:%S"); echo -n "$TIME  "
+   printf "%7s %5d %5d \n" "${RPM_FANA:----}" $CPU_TEMP $DUTY
 }
 
 #####################################################
@@ -241,20 +267,20 @@ DEVCOUNT=$(echo "$DEVLIST" | wc -l)
 
 # This is only needed if DUTY_* is not read by ipmitool (i.e.
 # we disable DUTY_* lines in read_fan_data and
-# assume duty is what we last set.  In that case we need to 
+# assume duty is what we last set.  In that case we need to
 # start with a guess so we don't spend so many cycles working up from 0.
 DUTY_PER=65
 
 read_fan_data # Get mode and rpm before script changes
 
-# Need good value DUTY_PER_LAST for 1st adjustment 
-# of DUTY_PER in DRIVES_check_adjust
-DUTY_PER_LAST=$DUTY_PER
-
 # Set mode to 'Full' to avoid BMC changing duty cycle
 # Need to wait a tick or it may not get next command
 # "echo -n ``" to avoid annoying newline generated in log
 echo -n `$IPMITOOL raw 0x30 0x45 1 1`; sleep 1
+# Need to start drive fans at a reasonable value
+# in case they are at extreme value when we start
+echo -n `$IPMITOOL raw 0x30 0x70 0x66 1 $ZONE_PER 50`
+DUTY_PER_LAST=50
 
 # DON'T NEED THIS?
 # Then start with 50% duty cycle and let algorithms adjust from there
@@ -264,6 +290,10 @@ echo -n `$IPMITOOL raw 0x30 0x45 1 1`; sleep 1
 
 printf "\nKey to drive status symbols:  * spinning;  _ standby;  ? unknown               Version $VERSION \n"
 print_header
+
+# Initialize CPU log
+printf "%s \n%s \n%17s %5s %5s \n" "$DATE" "Printed every CPU cycle" "RPM_FANA" "Temp" "Duty" | tee $CPU_LOG >/dev/null
+
 CPU_check_adjust
 
 ###########################################
@@ -276,10 +306,10 @@ while [ 1 ] ; do
    HM=$(date +%k%M); HM=`expr $HM + 0`
    R=$(( HM % 600 ))  # remainder after dividing by 6 hours
    if (( $R < $T )); then
-      print_header; 
+      print_header;
    fi
 
-   if [[ FIRST_TIME -eq 0 ]]; then 
+   if [[ FIRST_TIME -eq 0 ]]; then
       read_fan_data
 
       # Every cycle but the first, reset BMC if fans seem stuck and not obeying
@@ -287,10 +317,12 @@ while [ 1 ] ; do
       if [[ $CPU_TEMP<$CPU_REF && $DUTY_CPU>90 ]] || [[ $DUTY_CPU<$FAN_MIN ]]; then
          $IPMITOOL bmc reset warm
          printf "\n%s\n" "CPU_TEMP=$CPU_TEMP; DUTY_CPU=$DUTY_CPU I reset the BMC because DUTY_CPU was much too high for CPU_TEMP or below FAN_MIN!"
+         sleep 45
       fi
       if [[ $Tmean<$SP && $DUTY_PER>90 ]] || [[ $DUTY_PER<$FAN_MIN ]]; then
          $IPMITOOL bmc reset warm
          printf "\n%s\n" "I reset the BMC because DUTY_PER was much too high for Tmean or below FAN_MIN!"
+         sleep 45
       fi
    fi
 
@@ -298,9 +330,9 @@ while [ 1 ] ; do
 
    DRIVES_check_adjust
 
-   # If a fan doesn't exist, RPM value will be null.  These expressions 
+   # If a fan doesn't exist, RPM value will be null.  These expressions
    # substitute a value "---" if null so printing is not messed up
-   printf "%6.2f %6.2f %5.2f %6.2f %4d %5s %5s %5s %5s %5s %-7s %3d %3d  " $ERRc $P $I $D $CPU_TEMP "${RPM_FANA:----}" "${RPM_FAN1:----}" "${RPM_FAN2:----}" "${RPM_FAN3:----}" "${RPM_FAN4:----}" $MODEt $DUTY_CPU_LAST $DUTY_PER_LAST
+   printf "%7s %6s %5s %6s %4s %5s %5s %5s %5s %5s %-7s %3d %3d  " "${ERRc:----}" "${P:----}" $I "${D:----}" $CPU_TEMP "${RPM_FANA:----}" "${RPM_FAN1:----}" "${RPM_FAN2:----}" "${RPM_FAN3:----}" "${RPM_FAN4:----}" $MODEt $DUTY_CPU_LAST $DUTY_PER_LAST
 
    i=0
    while [ $i -lt $CPU_LOOPS ]; do
@@ -312,19 +344,19 @@ done
 
 # For SuperMicro motherboards with dual fan zones.  Per Supermicro:
 # Zone 0 - CPU or System fans, labelled with a number (e.g., FAN1, FAN2, etc.)
-# Zone 1 - Peripheral fans, labelled with a letter (e.g., FANA, FANB, etc.)  
+# Zone 1 - Peripheral fans, labelled with a letter (e.g., FANA, FANB, etc.)
 # You can reverse the zones if you wish so zone 1 controls CPU.
 
-# Adjusts fans based on drive and CPU temperatures. 
+# Adjusts fans based on drive and CPU temperatures.
 
 # Mean temp among drives is maintained at a setpoint
-# using a PID algorithm.  CPU temp need not and cannot be maintained 
-# at a setpoint, so PID is not used; instead fan duty cycle is simply 
+# using a PID algorithm.  CPU temp need not and cannot be maintained
+# at a setpoint, so PID is not used; instead fan duty cycle is simply
 # increased with temp using reference and scale settings.
 
 # Drives are checked and fans adjusted on a set interval, such as 6 minutes.
 # Logging is done at that point.  CPU temps can spike much faster,
-# so are checked at a shorter interval, such as 30 seconds.  
+# so are checked at a shorter interval, such as 30 seconds.
 
 # Logs:
 #   - Disk status (* spinning or _ standby)
@@ -337,24 +369,24 @@ done
 #   - New fan duty cycle in each zone
 #   - Adjustments to CPU fan duty cycle due to interim CPU loops
 
-# Includes disks on motherboard and on HBA. 
+# Includes disks on motherboard and on HBA.
 
 #  Relation between percent duty cycle, hex value of that number,
 #  and RPMs for my fans.  RPM will vary among fans, is not
 #  precisely related to duty cycle, and does not matter to the script.
 #  It is merely reported.
 #
-#  Percent	Hex	    RPM
-#  10	      A	    300
-#  20	     14	    400
-#  30	     1E	    500
-#  40	     28	    600/700
-#  50	     32	    800
-#  60	     3C	    900
-#  70	     46	    1000/1100
-#  80	     50	    1100/1200
-#  90	     5A	    1200/1300
-# 100	     64	    1300
+#  Percent      Hex         RPM
+#  10         A     300
+#  20        14     400
+#  30        1E     500
+#  40        28     600/700
+#  50        32     800
+#  60        3C     900
+#  70        46     1000/1100
+#  80        50     1100/1200
+#  90        5A     1200/1300
+# 100        64     1300
 
 # Because some Supermicro boards report incorrect duty cycle,
 # we don't read that.  Instead we assume it is what we set.
@@ -362,7 +394,7 @@ done
 # Tuning suggestions
 # PID tuning advice on the internet generally does not work well in this application.
 # First run the script spincheck.sh and get familiar with your temperature and fan variations without any intervention.
-# Choose a setpoint that is an actual observed Tmean, given the number of drives you have.  It should be the Tmean associated with the Tmax that you want.  
+# Choose a setpoint that is an actual observed Tmean, given the number of drives you have.  It should be the Tmean associated with the Tmax that you want.
 # Set Ki=0 and leave it there.  You probably will never need it.
 # Start with Kp low.  Use a value that results in a rounded correction=1 when error is the lowest value you observe other than 0  (i.e., when ERRc is minimal, Kp ~= 1 / ERRc)
 # Set Kd at about Kp*10
@@ -374,3 +406,4 @@ done
 # Uses joeschmuck's smartctl method for drive status (returns 0 if spinning, 2 in standby)
 # https://forums.freenas.org/index.php?threads/how-to-find-out-if-a-drive-is-spinning-down-properly.2068/#post-28451
 # Other method (camcontrol cmd -a) doesn't work with HBA
+[
