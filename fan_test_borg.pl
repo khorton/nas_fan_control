@@ -125,7 +125,7 @@ $cpu_temp_control = 1;  # 1 if the script will control a CPU fan to control CPU 
 ## https://forums.freenas.org/index.php?threads/script-to-control-fan-speed-in-response-to-hard-drive-temperatures.41294/page-4#post-285668
 $Kp = 8/3; # 5.333
 $Ki = 0;
-$Kd = 60;
+$Kd = 80;
 
 
 #######################
