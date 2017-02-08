@@ -211,6 +211,7 @@ sub get_fan_mode
 }
 
 sub get_fan_speed2
+# get fan speed for specified fan header
 {
     my ($fan_name) = @_;
     
