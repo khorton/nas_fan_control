@@ -36,8 +36,7 @@ FAN_MAX=100 # Fan maximum duty cycle (%) (to avoid zombie apocalypse)
 # Your measured fan RPMs at 30% duty cycle and 100% duty cycle
 # RPM_CPU is for FANA if ZONE_CPU=1 or FAN1 if ZONE_CPU=0
 # RPM_PER is for the other fan.
-# To test, enter [sudo] ipmitool raw 0x30 0x70 0x66 1 <ZONE> <DUTY>
-without the brackets; observe RPMs on IPMI GUI
+# To test, enter [sudo] ipmitool raw 0x30 0x70 0x66 1 <ZONE> <DUTY> without the brackets; observe RPMs on IPMI GUI
 RPM_CPU_30=600   # demob's system
 RPM_CPU_MAX=1700
 RPM_PER_30=400
