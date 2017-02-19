@@ -30,7 +30,7 @@ APPEND="-a"
 ZONE_CPU=1
 ZONE_PER=0
 
-FAN_MIN=25  # Fan minimum duty cycle (%) (to avoid stalling)
+FAN_MIN=20  # Fan minimum duty cycle (%) (to avoid stalling)
 FAN_MAX=100 # Fan maximum duty cycle (%) (to avoid zombie apocalypse)
 
 # Your measured fan RPMs at 30% duty cycle and 100% duty cycle
