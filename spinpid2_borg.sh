@@ -18,7 +18,7 @@ exec > >(tee -i $LOG) 2>&1
 
 # CPU output sent to a separate log for interim cycles
 # To append to existing CPU log, uncomment the APPEND definition
-CPU_LOG=/root/Jim/cpu.log
+CPU_LOG=/root/cpu.log
 APPEND="-a"
 
 #################  FAN SETTINGS ################
