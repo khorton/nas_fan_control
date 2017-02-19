@@ -325,8 +325,8 @@ fi
 # going fast or we didn't read DUTY_PER in read_fan_data
 # (second test is TRUE if unset).  Also initialize DUTY_PER_LAST
 if [[ ${!RPM_PER} -ge RPM_PER_MAX || -z ${DUTY_PER+x} ]]; then
-   echo -n `$IPMITOOL raw 0x30 0x70 0x66 1 $ZONE_PER 50`
-   DUTY_PER_LAST=50
+   echo -n `$IPMITOOL raw 0x30 0x70 0x66 1 $ZONE_PER 30`
+   DUTY_PER_LAST=30
 else DUTY_PER_LAST=$DUTY_PER
 fi
 
