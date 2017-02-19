@@ -117,11 +117,11 @@ function read_fan_data {
    # Read duty cycles, convert to decimal.
    # Duty cycle isn't provided reliably by all boards.  If necessary,
    # disable the next 5 lines, and we'll just assume it is what we last set.
-   DUTY_CPU=$($IPMITOOL raw 0x30 0x70 0x66 0 $ZONE_CPU) # in hex with leading space
-   DUTY_CPU=$((0x$(echo $DUTY_CPU)))  # strip leading space and decimalize
-   DUTY_PER=$($IPMITOOL raw 0x30 0x70 0x66 0 $ZONE_PER)
-   DUTY_PER=$((0x$(echo $DUTY_PER)))
-   DUTY_PER_LAST=$DUTY_PER
+   # DUTY_CPU=$($IPMITOOL raw 0x30 0x70 0x66 0 $ZONE_CPU) # in hex with leading space
+   # DUTY_CPU=$((0x$(echo $DUTY_CPU)))  # strip leading space and decimalize
+   # DUTY_PER=$($IPMITOOL raw 0x30 0x70 0x66 0 $ZONE_PER)
+   # DUTY_PER=$((0x$(echo $DUTY_PER)))
+   # DUTY_PER_LAST=$DUTY_PER
 
    # Read fan mode, convert to decimal, get text equivalent.
    MODE=$($IPMITOOL raw 0x30 0x45 0) # in hex with leading space
