@@ -39,9 +39,9 @@ FAN_MAX=100 # Fan maximum duty cycle (%) (to avoid zombie apocalypse)
 # To test, enter [sudo] ipmitool raw 0x30 0x70 0x66 1 <ZONE> <DUTY>
 without the brackets; observe RPMs on IPMI GUI
 RPM_CPU_30=3300   # demob's system
-RPM_CPU_MAX=2000
+RPM_CPU_MAX=5300
 RPM_PER_30=500
-RPM_PER_MAX=7000
+RPM_PER_MAX=1500
 # RPM_CPU_30=500   # Jim's system
 # RPM_CPU_MAX=1400
 # RPM_PER_30=500
