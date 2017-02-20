@@ -361,12 +361,12 @@ while [ 1 ] ; do
    # See if BMC reset is needed
    # ${!RPM_CPU} gets updated value of the variable RPM_CPU points to
    # If testing on 1-zone system, comment out 1st if statement to avoid BMC reset
-# 	if [[ (DUTY_CPU -ge 95 && ${!RPM_CPU} -lt RPM_CPU_MAX) || \
-# 			(DUTY_CPU -le 30 && ${!RPM_CPU} -gt RPM_CPU_30) ]] ; then
-# 		$IPMITOOL bmc reset cold
-# 		printf "\n%s\n" "DUTY_CPU=$DUTY_CPU; RPM_CPU=${!RPM_CPU} -- I reset the BMC because RPMs were too high or low for DUTY_CPU"
-# 		sleep 60
-# 	fi
+	if [[ (DUTY_CPU -ge 95 && ${!RPM_CPU} -lt RPM_CPU_MAX) || \
+			(DUTY_CPU -le 30 && ${!RPM_CPU} -gt RPM_CPU_30) ]] ; then
+		$IPMITOOL bmc reset cold
+		printf "\n%s\n" "DUTY_CPU=$DUTY_CPU; RPM_CPU=${!RPM_CPU} -- I reset the BMC because RPMs were too high or low for DUTY_CPU"
+		sleep 60
+	fi
 	if [[ (DUTY_PER -ge 95 && ${!RPM_PER} -lt RPM_PER_MAX) || \
 			(DUTY_PER -le 30 && ${!RPM_PER} -gt RPM_PER_30) ]] ; then
 		$IPMITOOL bmc reset cold
