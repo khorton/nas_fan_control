@@ -51,7 +51,7 @@ RPM_PER_MAX=1200
 
 #################  DRIVE SETTINGS ################
 
-SP=36   #  Setpoint mean drive temperature (C)
+SP=36.5   #  Setpoint mean drive temperature (C)
 
 #  Time interval for checking drives (minutes).  Drives change
 #  temperature slowly; 5 minutes is probably overkill.
