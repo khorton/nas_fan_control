@@ -1,6 +1,6 @@
 #!/usr/local/bin/bash
 # spinpid2.sh for dual fan zones.
-VERSION="2017-02-12"
+VERSION="2017-02-21"
 # Run as superuser. See notes at end.
 
 ##############################################
@@ -30,14 +30,16 @@ APPEND="-a"
 ZONE_CPU=1
 ZONE_PER=0
 
-FAN_MIN=20  # Fan minimum duty cycle (%) (to avoid stalling)
-FAN_MAX=100 # Fan maximum duty cycle (%) (to avoid zombie apocalypse)
+# Set min and max duty cycle to avoid stalling or zombie apocalypse
+DUTY_PER_MIN=20
+DUTY_PER_MAX=100
+DUTY_CPU_MIN=20
+DUTY_CPU_MAX=100
 
 # Your measured fan RPMs at 30% duty cycle and 100% duty cycle
 # RPM_CPU is for FANA if ZONE_CPU=1 or FAN1 if ZONE_CPU=0
 # RPM_PER is for the other fan.
-# To test, enter [sudo] ipmitool raw 0x30 0x70 0x66 1 <ZONE> <DUTY> without the brackets; observe RPMs on IPMI GUI
-RPM_CPU_30=3300   # demob's system
+RPM_CPU_30=3300   # Kevin's system
 RPM_CPU_MAX=5300
 RPM_PER_30=500
 RPM_PER_MAX=1500
@@ -66,7 +68,7 @@ CPU_T=10
 
 #  Reference temperature (C) for scaling CPU_DUTY (NOT a setpoint).
 #  At and below this temperature, CPU will demand minimum
-#  fan speed (FAN_MIN above).  Integer only!
+#  duty cycle (DUTY_CPU_MIN).  Integer only!
 CPU_REF=35
 #  Scalar for scaling CPU_DUTY. Integer only!
 #  CPU will demand this number of percentage points in additional
@@ -150,9 +152,15 @@ function read_fan_data {
 # Send to function adjust_fans.
 ##############################################
 function CPU_check_adjust {
+   DUTY_CPU_LAST=$DUTY_CPU
+   
    CPU_TEMP=$($IPMITOOL sdr | grep "CPU Temp" | grep -Eo '[0-9]{2,5}')
    # This will break if settings have non-integers
-   let DUTY_CPU=(CPU_TEMP-CPU_REF)*CPU_SCALE+FAN_MIN
+   let DUTY_CPU=(CPU_TEMP-CPU_REF)*CPU_SCALE+DUTY_CPU_MIN
+
+   # Don't allow duty cycle outside min-max
+   if [[ $DUTY_CPU -gt $DUTY_CPU_MAX ]]; then DUTY_CPU=$DUTY_CPU_MAX; fi
+   if [[ $DUTY_CPU -lt $DUTY_CPU_MIN ]]; then DUTY_CPU=$DUTY_CPU_MIN; fi
       
    adjust_fans $ZONE_CPU $DUTY_CPU $DUTY_CPU_LAST
 
@@ -197,10 +205,12 @@ function DRIVES_check_adjust {
       fi
    done <<< "$DEVLIST"
 
+   DUTY_PER_LAST=$DUTY_PER
+   
    # if no disks are spinning
    if [ $i -eq 0 ]; then
       Tmean=""; Tmax=""; P=""; D=""; ERRc=""
-      DUTY_PER=$FAN_MIN
+      DUTY_PER=$DUTY_PER_MIN
    else
       # summarize, calculate PID and print Tmax and Tmean
       if [ $ERRc == "" ]; then ERRc=0; fi  # Need value if all drives had been spun down last time
@@ -222,6 +232,10 @@ function DRIVES_check_adjust {
       PID=$(printf %0.f $PID)  # must be integer for duty
 
       let "DUTY_PER = $DUTY_PER_LAST + $PID"
+
+      # Don't allow duty cycle outside min-max
+      if [[ $DUTY_PER -gt $DUTY_PER_MAX ]]; then DUTY_PER=$DUTY_PER_MAX; fi
+      if [[ $DUTY_PER -lt $DUTY_PER_MIN ]]; then DUTY_PER=$DUTY_PER_MIN; fi
    fi
 
    # DIAGNOSTIC variables - uncomment for troubleshooting:
@@ -237,31 +251,20 @@ function DRIVES_check_adjust {
    printf "^%-3s %5s" "${Tmax:---}" "${Tmean:----}"
 }
 
-
 ##############################################
 # function adjust_fans
 # Zone, new duty, and last duty are passed as parameters
 ##############################################
 function adjust_fans {
-
    # parameters passed to this function
    ZONE=$1
    DUTY=$2
    DUTY_LAST=$3
 
-   # Don't allow duty cycle below FAN_MIN nor above 95%
-   if [[ $DUTY -gt $FAN_MAX ]]; then DUTY=$FAN_MAX; fi
-   if [[ $DUTY -lt $FAN_MIN ]]; then DUTY=$FAN_MIN; fi
-
    # Change if different from last duty, update last duty.
    if [[ $DUTY -ne $DUTY_LAST ]] || [[ FIRST_TIME -eq 1 ]]; then
       # Set new duty cycle. "echo -n ``" prevents newline generated in log
       echo -n `$IPMITOOL raw 0x30 0x70 0x66 1 $ZONE $DUTY`
-      if [[ ZONE -eq ZONE_CPU ]]; then
-        DUTY_CPU_LAST=$DUTY
-      else
-        DUTY_PER_LAST=$DUTY
-      fi
    fi
 }
 
@@ -313,7 +316,7 @@ fi
 
 read_fan_data
 
-# If mode not full, set it to avoid BMC changing duty cycle
+# If mode not Full, set it to avoid BMC changing duty cycle
 # Need to wait a tick or it may not get next command
 # "echo -n" to avoid annoying newline generated in log
 if [[ MODE -ne 1 ]]; then
@@ -322,12 +325,15 @@ if [[ MODE -ne 1 ]]; then
 fi
 
 # Need to start drive duty at a reasonable value if fans are
-# going fast or we didn't read DUTY_PER in read_fan_data
-# (second test is TRUE if unset).  Also initialize DUTY_PER_LAST
+# going fast or we didn't read DUTY_* in read_fan_data
+# (second test is TRUE if unset). 
 if [[ ${!RPM_PER} -ge RPM_PER_MAX || -z ${DUTY_PER+x} ]]; then
-   echo -n `$IPMITOOL raw 0x30 0x70 0x66 1 $ZONE_PER 30`
-   DUTY_PER_LAST=30
-else DUTY_PER_LAST=$DUTY_PER
+   echo -n `$IPMITOOL raw 0x30 0x70 0x66 1 $ZONE_PER 50`
+   DUTY_PER=50
+fi
+if [[ ${!RPM_CPU} -ge RPM_CPU_MAX || -z ${DUTY_CPU+x} ]]; then
+   echo -n `$IPMITOOL raw 0x30 0x70 0x66 1 $ZONE_CPU 50`
+   DUTY_CPU=50
 fi
 
 printf "\nKey to drive status symbols:  * spinning;  _ standby;  ? unknown               Version $VERSION \n"
@@ -361,7 +367,6 @@ while [ 1 ] ; do
 
    # See if BMC reset is needed
    # ${!RPM_CPU} gets updated value of the variable RPM_CPU points to
-   # If testing on 1-zone system, comment out 1st if statement to avoid BMC reset
 	if [[ (DUTY_CPU -ge 95 && ${!RPM_CPU} -lt RPM_CPU_MAX) || \
 			(DUTY_CPU -le 30 && ${!RPM_CPU} -gt RPM_CPU_30) ]] ; then
 		$IPMITOOL bmc reset cold
