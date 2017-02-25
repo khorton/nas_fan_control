@@ -17,17 +17,30 @@
 # NOTE: It is highly likely the "get_hd_temp" function will not work as-is with your HDs. Until a better solution is provided
 # you will need to modify this function to properly acquire the temperature. Setting debug=2 will help.
 
-# Tested with a SuperMicro X10-SRi-F, Xeon E5-1650v4, Noctua 120, 90 and 80mm fans in a Norco RPC-4224 4U chassis, with Seagate NAS drives.
+# Tested with a SuperMicro X10SRH-cF, Xeon E5-1650v4, Noctua 120, 90 and 80mm fans in a Norco RPC-4224 4U chassis, with 4 TB WD Red drives.
 
-# This script can be downloaded from : https://forums.freenas.org/index.php?threads/script-hybrid-cpu-hd-fan-zone-controller.46159/
-
-# The script was originally based on a script by Kevin Horton that can be found at:
-# https://forums.freenas.org/index.php?threads/script-to-control-fan-speed-in-response-to-hard-drive-temperatures.41294/page-3#post-282683
 
 # More information on CPU/Peripheral Zone can be found in this post:
 # https://forums.freenas.org/index.php?threads/thermal-and-accoustical-design-validation.28364/
 
 # stux
+
+###############################################################################################
+
+# This script can be downloaded from : 
+
+# This script is based on the hybrid fan controller script created by @Stux, and posted at:
+# https://forums.freenas.org/index.php?threads/script-hybrid-cpu-hd-fan-zone-controller.46159/
+
+# The significant changes from @Stux's script are:
+# 1. Replace HD fan control of several discrete duty cycles as a function of hottest HD temperature with a PID controller
+#    which controls duty cycle in 1% steps as a function of average HD temperature.  As a protection, if any HD temperature
+#    exceeds a specified value, the HD fans are commanded to 100% duty cycle.  This covers cases where one HD may be running 
+#    hot, even if the average HD temperature is acceptable, or the PID loop control has gone awry.
+# 2. Add optional setting to command CPU fans to 100% duty cycle if needed to assist with HD cooling, to cover scenarios 
+#    where the CPU fan zone also controls chassis exit fans
+# 3. Add optional log of HD fan temperatures, PID loop values and commanded fan duty cycles.  The log may optionally contain
+#    a record of each HD temperature, or only the coolest and warmest HD temperatures.
 
 # VERSION HISTORY
 #####################
@@ -59,10 +72,9 @@
 # 2017-01-18 Added log file
 # 2017-01-21 Refactored code to bump up CPU fan to help cool HD.  Drop the variabe CPU duty cycle, and just set to High,
 #            Added log file option without temps for every HD.
-#
+# 2017-01-29 Add header to log file every X hours
+
 # TO DO
-#           Add header to log file every X hours
-#
 #           Add option for no CPU fan control.
 ###############################################################################################
 ## CONFIGURATION
