@@ -15,7 +15,7 @@
 
 # This script can be downloaded from : 
 
-fghjkl
+# fghjkl
 
 ###############################################################################################
 # This script is designed to control both the CPU and HD fans in a Supermicro X10 based system according to both
