@@ -1,5 +1,23 @@
 #!/usr/local/bin/perl
 
+# This script is based on the hybrid fan controller script created by @Stux, and posted at:
+# https://forums.freenas.org/index.php?threads/script-hybrid-cpu-hd-fan-zone-controller.46159/
+
+# The significant changes from @Stux's script are:
+# 1. Replace HD fan control of several discrete duty cycles as a function of hottest HD temperature with a PID controller
+#    which controls duty cycle in 1% steps as a function of average HD temperature.  As a protection, if any HD temperature
+#    exceeds a specified value, the HD fans are commanded to 100% duty cycle.  This covers cases where one HD may be running 
+#    hot, even if the average HD temperature is acceptable, or the PID loop control has gone awry.
+# 2. Add optional setting to command CPU fans to 100% duty cycle if needed to assist with HD cooling, to cover scenarios 
+#    where the CPU fan zone also controls chassis exit fans.
+# 3. Add optional log of HD fan temperatures, PID loop values and commanded fan duty cycles.  The log may optionally contain
+#    a record of each HD temperature, or only the coolest and warmest HD temperatures.
+
+# This script can be downloaded from : 
+
+fghjkl
+
+###############################################################################################
 # This script is designed to control both the CPU and HD fans in a Supermicro X10 based system according to both
 # the CPU and HD temperatures in order to minimize noise while providing sufficient cooling to deal with scrubs
 # and CPU torture tests. It may work in X9 based system, but this has not been tested.
@@ -17,8 +35,7 @@
 # NOTE: It is highly likely the "get_hd_temp" function will not work as-is with your HDs. Until a better solution is provided
 # you will need to modify this function to properly acquire the temperature. Setting debug=2 will help.
 
-# Tested with a SuperMicro X10SRH-cF, Xeon E5-1650v4, Noctua 120, 90 and 80mm fans in a Norco RPC-4224 4U chassis, with 4 TB WD Red drives.
-
+# Tested with a SuperMicro X10SRH-cF, Xeon E5-1650v4, Noctua 120, 90 and 80mm fans in a Norco RPC-4224 4U chassis, with 16 x 4 TB WD Red drives.
 
 # More information on CPU/Peripheral Zone can be found in this post:
 # https://forums.freenas.org/index.php?threads/thermal-and-accoustical-design-validation.28364/
@@ -26,22 +43,6 @@
 # stux
 
 ###############################################################################################
-
-# This script can be downloaded from : 
-
-# This script is based on the hybrid fan controller script created by @Stux, and posted at:
-# https://forums.freenas.org/index.php?threads/script-hybrid-cpu-hd-fan-zone-controller.46159/
-
-# The significant changes from @Stux's script are:
-# 1. Replace HD fan control of several discrete duty cycles as a function of hottest HD temperature with a PID controller
-#    which controls duty cycle in 1% steps as a function of average HD temperature.  As a protection, if any HD temperature
-#    exceeds a specified value, the HD fans are commanded to 100% duty cycle.  This covers cases where one HD may be running 
-#    hot, even if the average HD temperature is acceptable, or the PID loop control has gone awry.
-# 2. Add optional setting to command CPU fans to 100% duty cycle if needed to assist with HD cooling, to cover scenarios 
-#    where the CPU fan zone also controls chassis exit fans
-# 3. Add optional log of HD fan temperatures, PID loop values and commanded fan duty cycles.  The log may optionally contain
-#    a record of each HD temperature, or only the coolest and warmest HD temperatures.
-
 # VERSION HISTORY
 #####################
 # 2016-09-19 Initial Version
@@ -122,7 +123,9 @@ $cpu_hd_override_temp = 65;
 $hd_fans_cool_cpu = 1;      # 1 if the hd fans should spin up to cool the cpu, 0 otherwise
 
 ## HD FAN DUTY CYCLE TO OVERRIDE CPU FANS
-$cpu_fans_cool_hd            = 1;  # 1 if the cpu fans should spin up to cool the HDs, when needed.  0 otherwise
+$cpu_fans_cool_hd            = 1;  # 1 if the CPU fans should spin up to cool the HDs, when needed.  0 otherwise.  This may be useful if 
+                                   #   the CPU fan zone also contains chassis exit fans, as an increase in chassis exit fan speed may 
+                                   #   increase the HD cooling air flow.
 $hd_cpu_override_duty_cycle = 95;  # when the HD duty cycle equals or exceeds this value, the CPU fans may be overridden to help cool HDs
 
 ## CPU TEMP CONTROL
