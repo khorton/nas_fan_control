@@ -14,8 +14,7 @@
 #    a record of each HD temperature, or only the coolest and warmest HD temperatures.
 
 # This script can be downloaded from : 
-
-# fghjkl
+# https://forums.freenas.org/index.php?threads/pid-fan-controller-perl-script.50908/
 
 ###############################################################################################
 # This script is designed to control both the CPU and HD fans in a Supermicro X10 based system according to both
