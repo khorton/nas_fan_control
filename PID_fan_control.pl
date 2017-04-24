@@ -87,7 +87,7 @@ $debug = 0;
 
 ## LOG
 $log = '/root/PID_fan_control.log';
-$log_temp_summary_only = 1;      # 1 if not logging individual HD temperatures.  0 if logging temp of each HD
+$log_temp_summary_only = 0;      # 1 if not logging individual HD temperatures.  0 if logging temp of each HD
 $log_header_hourly_interval = 2; # number of hours between log headers.  Valid options are 1, 2, 3, 4, 6 & 12.
                                  # log headers will always appear at the start of a log, at midnight and any 
                                  # time the list of HDs changes (if individual HD temperatures are logged)
@@ -139,8 +139,9 @@ $cpu_temp_control = 1;  # 1 if the script will control a CPU fan to control CPU 
 ## https://forums.freenas.org/index.php?threads/script-to-control-fan-speed-in-response-to-hard-drive-temperatures.41294/page-4#post-285668
 $Kp = 16/3; # 5.333
 $Ki = 0;
-$Kd = 120;
-
+#$Kd = 120; # changed from 120 to 100 on 2017-04-15 0722
+#$Kd = 100; # changed from 100 to 135 on 2017-04-16 0951
+$Kd = 135;
 
 #######################
 ## FAN CONFIGURATION
@@ -200,7 +201,7 @@ $ipmitool = "/usr/local/bin/ipmitool";
 ## HD POLLING INTERVAL
 ## The controller will only poll the harddrives periodically. Since hard drives change temperature slowly
 ## this is a good thing. 180 seconds is a good value.
-$hd_polling_interval = 180;    # seconds
+$hd_polling_interval = 90;    # seconds
 
 ## FAN SPEED CHANGE DELAY TIME
 ## It takes the fans a few seconds to change speeds, we allow a grace before verifying. If we fail the verify
