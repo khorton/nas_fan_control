@@ -17,4 +17,4 @@ PID_fan_control_borg.pl - This is the same basic script as above, but with setti
 * Stock Fractal Design exit fan on the motherboard side of the case, running at medium speed.
 * Thermaltake Gravity i1: CPU cooler
 
-See the script for more info and commentary.
+See the scripts for more info and commentary.
