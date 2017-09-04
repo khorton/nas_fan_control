@@ -18,3 +18,5 @@ PID_fan_control_borg.pl - This is the same basic script as above, but with setti
 * Thermaltake Gravity i1: CPU cooler
 
 See the scripts for more info and commentary.
+
+Discussion on the FreeNAS forums: https://forums.freenas.org/index.php?threads/pid-fan-controller-perl-script.50908/
