@@ -166,7 +166,7 @@ $hd_fan_duty_high      = 100;    # percentage on, ie 100% is full speed.
 # $hd_fan_duty_med_high  = 80;
 # $hd_fan_duty_med_low   = 50;
 $hd_fan_duty_low       = 20;    # some 120mm fans stall below 30.
-$hd_fan_duty_start     = 40;    # HD fan duty cycle when script starts.
+$hd_fan_duty_start     = 80;    # HD fan duty cycle when script starts.
 
 
 ## FAN ZONES
