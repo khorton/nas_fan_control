@@ -156,7 +156,7 @@ $hd_max_fan_speed     = 1500;
 
 ## CPU FAN DUTY LEVELS
 ## These levels are used to control the CPU fans
-$fan_duty_high    = 100;        # percentage on, ie 100% is full speed.
+$fan_duty_high    = 95;        # percentage on, ie 100% is full speed.
 $fan_duty_med     = 75;
 $fan_duty_low     = 40;
 
