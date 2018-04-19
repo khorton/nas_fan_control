@@ -83,7 +83,8 @@
 ## DEBUG LEVEL
 ## 0 means no debugging. 1,2,3,4 provide more verbosity
 ## You should run this script in at least level 1 to verify its working correctly on your system
-$debug = 0;
+$debug = 2;
+$debug_log = '/root/PID_fan_control_debug.log';
 
 ## LOG
 $log = '/root/PID_fan_control.log';
@@ -249,6 +250,7 @@ main();
 sub main
 {
     open LOG, ">>", $log or die $!;
+    open DEBUG_LOG, ">>", $debug_log or die $!;
     
     # Print Log Header
     @hd_list = get_hd_list();
@@ -888,7 +890,7 @@ sub dprint
     if( $debug > $level ) 
     {
         my $datestring = build_date_time_string();
-        print "$datestring: $output";
+        print DEBUG_LOG "$datestring: $output";
     }
 
     return;
