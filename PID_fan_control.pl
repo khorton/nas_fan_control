@@ -105,7 +105,7 @@ $low_cpu_temp = 35;        # will go LOW when we fall below 35 again
 ## more silent your system.
 ## Note, it is possible for your HDs to go above this... but if your cooling is good, they shouldn't.
 $hd_ave_target = 37.0;    # PID control loop will target this average temperature
-$hd_max_allowed_temp = 40; # celsius. PID control aborts and fans set to 100% duty cycle when a HD hits this temp.
+$hd_max_allowed_temp = 42; # celsius. PID control aborts and fans set to 100% duty cycle when a HD hits this temp.
                            # This ensures that no matter how poorly chosen the PID gains are, or how much of a spread
                            # there is between the average HD temperature and the maximum HD temperature, the HD fans 
                            # will be set to 100% if any drive reaches this temperature.
