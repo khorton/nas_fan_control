@@ -88,7 +88,7 @@ $debug_log = '/root/PID_fan_control_debug.log';
 
 ## LOG
 $log = '/root/PID_fan_control.log';
-$log_temp_summary_only = 1;      # 1 if not logging individual HD temperatures.  0 if logging temp of each HD
+$log_temp_summary_only = 0;      # 1 if not logging individual HD temperatures.  0 if logging temp of each HD
 $log_header_hourly_interval = 2; # number of hours between log headers.  Valid options are 1, 2, 3, 4, 6 & 12.
                                  # log headers will always appear at the start of a log, at midnight and any 
                                  # time the list of HDs changes (if individual HD temperatures are logged)
