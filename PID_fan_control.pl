@@ -73,7 +73,11 @@
 # 2017-01-21 Refactored code to bump up CPU fan to help cool HD.  Drop the variabe CPU duty cycle, and just set to High,
 #            Added log file option without temps for every HD.
 # 2017-01-29 Add header to log file every X hours
-
+#
+# 2018-08-24 v1.0 Version optimized for 1500 rpm Noctua NF-F12 fans
+# 
+# 2018-08-24 Revised gains and thresholds for 3000 rpm Noctua NF-F12 iPPC fans
+#
 # TO DO
 #           Add option for no CPU fan control.
 ###############################################################################################
@@ -104,8 +108,8 @@ $low_cpu_temp = 35;        # will go LOW when we fall below 35 again
 ## This is the temperature that we regard as being uncomfortable. The higher this is the
 ## more silent your system.
 ## Note, it is possible for your HDs to go above this... but if your cooling is good, they shouldn't.
-$hd_ave_target = 37.0;    # PID control loop will target this average temperature
-$hd_max_allowed_temp = 42; # celsius. PID control aborts and fans set to 100% duty cycle when a HD hits this temp.
+$hd_ave_target = 36.0;    # PID control loop will target this average temperature
+$hd_max_allowed_temp = 40; # celsius. PID control aborts and fans set to 100% duty cycle when a HD hits this temp.
                            # This ensures that no matter how poorly chosen the PID gains are, or how much of a spread
                            # there is between the average HD temperature and the maximum HD temperature, the HD fans 
                            # will be set to 100% if any drive reaches this temperature.
@@ -138,12 +142,12 @@ $cpu_temp_control = 1;  # 1 if the script will control a CPU fan to control CPU 
 ## For example, if you used a gain of Kp = 8, and a T = 3 (3 minute interval), the new value is $Kp = 8/3.
 ## Kd values from the spinpid.sh script can be used directly here.
 ## https://forums.freenas.org/index.php?threads/script-to-control-fan-speed-in-response-to-hard-drive-temperatures.41294/page-4#post-285668
-$Kp = 16/3; # 5.333
+$Kp = 8/3; # 5.333
 $Ki = 0;
 #$Kd = 120; # changed from 120 to 100 on 2017-04-15 0722
 #$Kd = 100; # changed from 100 to 135 on 2017-04-16 0951
 #$Kd = 135; # changed from 135 to 150 on 2018-04-04 1339
-$Kd = 150;
+$Kd = 75;
 #######################
 ## FAN CONFIGURATION
 ####################
@@ -153,7 +157,7 @@ $Kd = 150;
 ## Connected to the cpu_fan_header and the hd_fan_header.
 ## These values are used to verify high/low fan speeds and trigger a BMC reset if necessary.
 $cpu_max_fan_speed    = 1800;
-$hd_max_fan_speed     = 1500;
+$hd_max_fan_speed     = 3300;
 
 
 ## CPU FAN DUTY LEVELS
@@ -167,8 +171,8 @@ $fan_duty_low     = 30;
 $hd_fan_duty_high      = 100;    # percentage on, ie 100% is full speed.
 $hd_fan_duty_med_high  = 80;
 $hd_fan_duty_med_low   = 50;
-$hd_fan_duty_low       = 30;    # some 120mm fans stall below 30.
-$hd_fan_duty_start     = 65;    # HD fan duty cycle when script starts.
+$hd_fan_duty_low       = 20;    # some 120mm fans stall below 30.
+$hd_fan_duty_start     = 33;    # HD fan duty cycle when script starts.
 
 
 ## FAN ZONES
