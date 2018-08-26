@@ -76,7 +76,8 @@
 #
 # 2018-08-24 v1.0 Version optimized for 1500 rpm Noctua NF-F12 fans
 # 
-# 2018-08-24 Revised gains and thresholds for 3000 rpm Noctua NF-F12 iPPC fans
+# 2018-08-25 Revised gains and thresholds for 3000 rpm Noctua NF-F12 iPPC fans
+#            Added 10s pause before checking fan speed, to allow time for fans to respond to latest gain change
 #
 # TO DO
 #           Add option for no CPU fan control.
@@ -108,7 +109,7 @@ $low_cpu_temp = 35;        # will go LOW when we fall below 35 again
 ## This is the temperature that we regard as being uncomfortable. The higher this is the
 ## more silent your system.
 ## Note, it is possible for your HDs to go above this... but if your cooling is good, they shouldn't.
-$hd_ave_target = 36.0;    # PID control loop will target this average temperature
+$hd_ave_target = 36.25;    # PID control loop will target this average temperature
 $hd_max_allowed_temp = 40; # celsius. PID control aborts and fans set to 100% duty cycle when a HD hits this temp.
                            # This ensures that no matter how poorly chosen the PID gains are, or how much of a spread
                            # there is between the average HD temperature and the maximum HD temperature, the HD fans 
@@ -142,12 +143,19 @@ $cpu_temp_control = 1;  # 1 if the script will control a CPU fan to control CPU 
 ## For example, if you used a gain of Kp = 8, and a T = 3 (3 minute interval), the new value is $Kp = 8/3.
 ## Kd values from the spinpid.sh script can be used directly here.
 ## https://forums.freenas.org/index.php?threads/script-to-control-fan-speed-in-response-to-hard-drive-temperatures.41294/page-4#post-285668
-$Kp = 8/3; # 5.333
+#$Kp = 8/3;
+$Kp = 16/3;
 $Ki = 0;
 #$Kd = 120; # changed from 120 to 100 on 2017-04-15 0722
 #$Kd = 100; # changed from 100 to 135 on 2017-04-16 0951
 #$Kd = 135; # changed from 135 to 150 on 2018-04-04 1339
-$Kd = 75;
+#Kd = 150;
+#Kd = 75; reduced to 50% when switching to 3000 rpm vs 1500 rpm fans on 2018-08-24
+#$Kd = 60; # changed from 75 to 60 on 2018-08-25
+#$Kd = 90; # changed from 60 to 90 on 2018-08-25
+#$Kd = 72; # changed from 90 to 72 on 2018-08-25
+$Kd = 120; # changed from 72 to 120 on 2018-08-25
+#$Kd = 144; # changed from 120 to 144 on 2018-08-25
 #######################
 ## FAN CONFIGURATION
 ####################
@@ -172,7 +180,7 @@ $hd_fan_duty_high      = 100;    # percentage on, ie 100% is full speed.
 $hd_fan_duty_med_high  = 80;
 $hd_fan_duty_med_low   = 50;
 $hd_fan_duty_low       = 20;    # some 120mm fans stall below 30.
-$hd_fan_duty_start     = 33;    # HD fan duty cycle when script starts.
+$hd_fan_duty_start     = 38;    # HD fan duty cycle when script starts.
 
 
 ## FAN ZONES
@@ -384,6 +392,8 @@ sub main
             
             $hd_fan_mode = get_fan_mode();
             printf(LOG "%6s", $hd_fan_mode);
+	    
+	    sleep 10; # pause 10s to allow fans to change speed after setting it
             $ave_fan_speed = get_fan_ave_speed(@hd_fan_list);
             printf(LOG "%6s", $ave_fan_speed);
             printf(LOG "%4i/%-3i", $hd_fan_duty_old, $hd_fan_duty);
