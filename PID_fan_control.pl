@@ -89,7 +89,7 @@
 ## 0 means no debugging. 1,2,3,4 provide more verbosity
 ## You should run this script in at least level 1 to verify its working correctly on your system
 $debug = 0;
-$debug_log = '/root/PID_fan_control_debug.log';
+$debug_log = '/root/Debug_PID_fan_control.log';
 
 ## LOG
 $log = '/root/PID_fan_control.log';
@@ -156,6 +156,8 @@ $Ki = 0;
 #$Kd = 72; # changed from 90 to 72 on 2018-08-25
 $Kd = 120; # changed from 72 to 120 on 2018-08-25
 #$Kd = 144; # changed from 120 to 144 on 2018-08-25
+#$Kd = 120; # changed from 72 to 120 on 2018-08-25
+$Kd =  96; # changed from 120 to 96 on 2018-08-27
 #######################
 ## FAN CONFIGURATION
 ####################
