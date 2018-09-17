@@ -185,7 +185,7 @@ $hd_fan_duty_high      = 100;    # percentage on, ie 100% is full speed.
 $hd_fan_duty_med_high  = 80;
 $hd_fan_duty_med_low   = 50;
 $hd_fan_duty_low       = 20;    # some 120mm fans stall below 30.
-$hd_fan_duty_start     = 38;    # HD fan duty cycle when script starts.
+$hd_fan_duty_start     = 60;    # HD fan duty cycle when script starts.
 
 
 ## FAN ZONES
@@ -860,7 +860,7 @@ sub print_log_header
     @hd_list = @_;
     my $timestring = build_time_string();
     my $datestring = build_date_string();
-    printf(LOG "\n\nPID Fan Controller Log  ---  Target HD Temperature = %5.2f deg C  ---  PID Control Gains: Kp = %6.3f, Ki = %6.3f, Kd = %5.1f\n         ", $hd_ave_target, $Kp, $Ki, $Kd);
+    printf(LOG "\n\nPID Fan Controller Log  ---  Target $hd_num_peak Disk HD Temperature = %5.2f deg C  ---  PID Control Gains: Kp = %6.3f, Ki = %6.3f, Kd = %5.1f\n         ", $hd_ave_target, $Kp, $Ki, $Kd);
     if ($log_temp_summary_only)
     {
         print LOG "   HD   Min";
