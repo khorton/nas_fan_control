@@ -79,6 +79,8 @@
 # 2018-08-25 Revised gains and thresholds for 3000 rpm Noctua NF-F12 iPPC fans
 #            Added 10s pause before checking fan speed, to allow time for fans to respond to latest gain change
 #
+# 2018-09-17 Revised HD temp average to only look at warmest 4 disks.
+#
 # TO DO
 #           Add option for no CPU fan control.
 ###############################################################################################
@@ -109,11 +111,12 @@ $low_cpu_temp = 35;        # will go LOW when we fall below 35 again
 ## This is the temperature that we regard as being uncomfortable. The higher this is the
 ## more silent your system.
 ## Note, it is possible for your HDs to go above this... but if your cooling is good, they shouldn't.
-$hd_ave_target = 36.25;    # PID control loop will target this average temperature
+$hd_ave_target = 38;       # PID control loop will target this average temperature
 $hd_max_allowed_temp = 40; # celsius. PID control aborts and fans set to 100% duty cycle when a HD hits this temp.
                            # This ensures that no matter how poorly chosen the PID gains are, or how much of a spread
                            # there is between the average HD temperature and the maximum HD temperature, the HD fans 
                            # will be set to 100% if any drive reaches this temperature.
+$hd_num_peak = 4;          # Number of warmest HDs to use when calculating average temp
 
 ## CPU TEMP TO OVERRIDE HD FANS
 ## when the CPU climbs above this temperature, the HD fans will be overridden
@@ -511,7 +514,14 @@ sub get_hd_temps
         }
     }
 
-    my $ave_temp = $temp_sum / $HD_count;
+    my @temps_sorted = sort { $a <=> $b } @temp_list;
+
+    $temp_sum = 0;
+    for (my $n = $hd_num_peak; $n > 0; $n = $n -1) {
+	$temp_sum += pop(@temps_sorted);
+	}
+
+    my $ave_temp = $temp_sum / $hd_num_peak;
 
     return ($min_temp, $max_temp, $ave_temp, @temp_list);
 }
