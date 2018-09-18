@@ -111,7 +111,7 @@ $low_cpu_temp = 35;        # will go LOW when we fall below 35 again
 ## This is the temperature that we regard as being uncomfortable. The higher this is the
 ## more silent your system.
 ## Note, it is possible for your HDs to go above this... but if your cooling is good, they shouldn't.
-$hd_ave_target = 38;       # PID control loop will target this average temperature
+$hd_ave_target = 37.0;     # PID control loop will target this average temperature
 $hd_max_allowed_temp = 40; # celsius. PID control aborts and fans set to 100% duty cycle when a HD hits this temp.
                            # This ensures that no matter how poorly chosen the PID gains are, or how much of a spread
                            # there is between the average HD temperature and the maximum HD temperature, the HD fans 
@@ -149,18 +149,8 @@ $cpu_temp_control = 1;  # 1 if the script will control a CPU fan to control CPU 
 #$Kp = 8/3;
 $Kp = 16/3;
 $Ki = 0;
-#$Kd = 120; # changed from 120 to 100 on 2017-04-15 0722
-#$Kd = 100; # changed from 100 to 135 on 2017-04-16 0951
-#$Kd = 135; # changed from 135 to 150 on 2018-04-04 1339
-#Kd = 150;
-#Kd = 75; reduced to 50% when switching to 3000 rpm vs 1500 rpm fans on 2018-08-24
-#$Kd = 60; # changed from 75 to 60 on 2018-08-25
-#$Kd = 90; # changed from 60 to 90 on 2018-08-25
-#$Kd = 72; # changed from 90 to 72 on 2018-08-25
-$Kd = 120; # changed from 72 to 120 on 2018-08-25
-#$Kd = 144; # changed from 120 to 144 on 2018-08-25
-#$Kd = 120; # changed from 72 to 120 on 2018-08-25
-$Kd =  96; # changed from 120 to 96 on 2018-08-27
+#$Kd =  96; # changed from 120 to 96 on 2018-08-27
+$Kd = 48; # changed from 96 to 48 on 2018-09-18 0822
 #######################
 ## FAN CONFIGURATION
 ####################
