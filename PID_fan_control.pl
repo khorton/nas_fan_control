@@ -111,12 +111,12 @@ $low_cpu_temp = 35;        # will go LOW when we fall below 35 again
 ## This is the temperature that we regard as being uncomfortable. The higher this is the
 ## more silent your system.
 ## Note, it is possible for your HDs to go above this... but if your cooling is good, they shouldn't.
-$hd_ave_target = 37.0;     # PID control loop will target this average temperature
+$hd_ave_target = 38.0;     # PID control loop will target this average temperature
 $hd_max_allowed_temp = 40; # celsius. PID control aborts and fans set to 100% duty cycle when a HD hits this temp.
                            # This ensures that no matter how poorly chosen the PID gains are, or how much of a spread
                            # there is between the average HD temperature and the maximum HD temperature, the HD fans 
                            # will be set to 100% if any drive reaches this temperature.
-$hd_num_peak = 4;          # Number of warmest HDs to use when calculating average temp
+$hd_num_peak = 2;          # Number of warmest HDs to use when calculating average temp
 
 ## CPU TEMP TO OVERRIDE HD FANS
 ## when the CPU climbs above this temperature, the HD fans will be overridden
@@ -151,6 +151,7 @@ $Kp = 16/3;
 $Ki = 0;
 #$Kd =  96; # changed from 120 to 96 on 2018-08-27
 $Kd = 48; # changed from 96 to 48 on 2018-09-18 0822
+$Kd = 24; # changed from 96 to 48 on 2018-09-18 0909 when changing from 4 disk peak to 2 disk
 #######################
 ## FAN CONFIGURATION
 ####################
