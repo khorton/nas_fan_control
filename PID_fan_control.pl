@@ -81,11 +81,28 @@
 #
 # 2018-09-17 Revised HD temp average to only look at warmest 4 disks.
 #
+# 2018-09-27 Create branch "npeak" that uses config file to determine number of warmest disks to average, 
+#            PID gains and target average temperature.
+#
 # TO DO
 #           Add option for no CPU fan control.
 ###############################################################################################
 ## CONFIGURATION
 ################
+
+##CONFIG FILE
+## Read following config file at start and every X minutes to determine number of warmest disks to average,
+## target average temperature and PID gains.  If file is not available, or corrupt, use defaults specified
+## in this script.
+$config = '/root/nas_fan_control/PID_control_config.ini'
+
+##DEFAULT VALUES
+## Use the values declared within script if the config file is not present
+$hd_ave_target = 38; # PID control loop will target this average temperature for the warmest N disks
+$Kp = 16/3;
+$Ki = 0;
+$Kd = 24;
+$num_disks = 2;     # Number of warmest HDs to use when calculating average temp
 
 ## DEBUG LEVEL
 ## 0 means no debugging. 1,2,3,4 provide more verbosity
@@ -111,12 +128,12 @@ $low_cpu_temp = 35;        # will go LOW when we fall below 35 again
 ## This is the temperature that we regard as being uncomfortable. The higher this is the
 ## more silent your system.
 ## Note, it is possible for your HDs to go above this... but if your cooling is good, they shouldn't.
-$hd_ave_target = 38.0;     # PID control loop will target this average temperature
+# $hd_ave_target = 38.0;   # define this value in the DEFAULT VALUES block at top of script
 $hd_max_allowed_temp = 40; # celsius. PID control aborts and fans set to 100% duty cycle when a HD hits this temp.
                            # This ensures that no matter how poorly chosen the PID gains are, or how much of a spread
                            # there is between the average HD temperature and the maximum HD temperature, the HD fans 
                            # will be set to 100% if any drive reaches this temperature.
-$hd_num_peak = 4;          # Number of warmest HDs to use when calculating average temp
+# $hd_num_peak = 4;        # define this value in the DEFAULT VALUES block at top of script
 
 ## CPU TEMP TO OVERRIDE HD FANS
 ## when the CPU climbs above this temperature, the HD fans will be overridden
@@ -147,9 +164,9 @@ $cpu_temp_control = 1;  # 1 if the script will control a CPU fan to control CPU 
 ## Kd values from the spinpid.sh script can be used directly here.
 ## https://forums.freenas.org/index.php?threads/script-to-control-fan-speed-in-response-to-hard-drive-temperatures.41294/page-4#post-285668
 #$Kp = 8/3;
-$Kp = 16/3;
-$Ki = 0;
-$Kd =  96; # changed from 120 to 96 on 2018-08-27
+# $Kp = 16/3; # define this value in the DEFAULT VALUES block at top of script
+# $Ki = 0;    # define this value in the DEFAULT VALUES block at top of script
+# $Kd =  96;  # define this value in the DEFAULT VALUES block at top of script
 
 #######################
 ## FAN CONFIGURATION
@@ -276,6 +293,17 @@ sub main
     {
         # next log time in seconds past Unix epoch
         $next_log_time = timelocal(0,0,$next_log_hour,$day,$month,$year);
+    }
+    
+    # read config file, if present
+    if (do $config_file) {
+      $Ta = $config_Ta;
+      $Kp = $config_Kp;
+      $Ki = $config_Ki;
+      $Kd = $config_Kd;
+      $num_disks = $config_num_disks;
+    } else {
+      warn "Config file not found.  Using default values";
     }
     
     # need to go to Full mode so we have unfettered control of Fans
