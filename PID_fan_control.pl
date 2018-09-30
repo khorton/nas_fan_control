@@ -302,6 +302,10 @@ sub main
       $Ki = $config_Ki;
       $Kd = $config_Kd;
       $hd_num_peak = $config_num_disks;
+      print "Ta = $hd_ave_target\n";
+      print "Kp = $Kp\n";
+      print "Kd = $Kd\n";
+      print "Number of disks to average = $$hd_num_peak\n";
     } else {
       warn "Config file not found.  Using default values";
       print "Ta = $hd_ave_target\n";
