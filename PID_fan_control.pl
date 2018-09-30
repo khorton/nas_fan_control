@@ -276,6 +276,22 @@ sub main
     open LOG, ">>", $log or die $!;
     open DEBUG_LOG, ">>", $debug_log or die $!;
     
+    # read config file, if present
+    if (do $config_file) {
+      $hd_ave_target = $config_Ta;
+      $Kp = $config_Kp;
+      $Ki = $config_Ki;
+      $Kd = $config_Kd;
+      $hd_num_peak = $config_num_disks;
+      print "Ta = $hd_ave_target\n";
+      print "Kp = $Kp\n";
+      print "Kd = $Kd\n";
+      print "Number of disks to average = $hd_num_peak\n";
+    } else {
+      warn "Config file not found.  Using default values";
+      print "Ta = $hd_ave_target\n";
+    }
+    
     # Print Log Header
     @hd_list = get_hd_list();
     print_log_header(@hd_list);
@@ -293,22 +309,6 @@ sub main
     {
         # next log time in seconds past Unix epoch
         $next_log_time = timelocal(0,0,$next_log_hour,$day,$month,$year);
-    }
-    
-    # read config file, if present
-    if (do $config_file) {
-      $hd_ave_target = $config_Ta;
-      $Kp = $config_Kp;
-      $Ki = $config_Ki;
-      $Kd = $config_Kd;
-      $hd_num_peak = $config_num_disks;
-      print "Ta = $hd_ave_target\n";
-      print "Kp = $Kp\n";
-      print "Kd = $Kd\n";
-      print "Number of disks to average = $$hd_num_peak\n";
-    } else {
-      warn "Config file not found.  Using default values";
-      print "Ta = $hd_ave_target\n";
     }
     
     # need to go to Full mode so we have unfettered control of Fans
