@@ -94,7 +94,7 @@
 ## Read following config file at start and every X minutes to determine number of warmest disks to average,
 ## target average temperature and PID gains.  If file is not available, or corrupt, use defaults specified
 ## in this script.
-$config = '/root/nas_fan_control/PID_control_config.ini'
+$config_file = '/root/nas_fan_control/PID_fan_control_config.ini';
 
 ##DEFAULT VALUES
 ## Use the values declared within script if the config file is not present
@@ -102,7 +102,7 @@ $hd_ave_target = 38; # PID control loop will target this average temperature for
 $Kp = 16/3;
 $Ki = 0;
 $Kd = 24;
-$num_disks = 2;     # Number of warmest HDs to use when calculating average temp
+$hd_num_peak = 2;     # Number of warmest HDs to use when calculating average temp
 
 ## DEBUG LEVEL
 ## 0 means no debugging. 1,2,3,4 provide more verbosity
@@ -297,13 +297,14 @@ sub main
     
     # read config file, if present
     if (do $config_file) {
-      $Ta = $config_Ta;
+      $hd_ave_target = $config_Ta;
       $Kp = $config_Kp;
       $Ki = $config_Ki;
       $Kd = $config_Kd;
-      $num_disks = $config_num_disks;
+      $hd_num_peak = $config_num_disks;
     } else {
       warn "Config file not found.  Using default values";
+      print "Ta = $hd_ave_target\n";
     }
     
     # need to go to Full mode so we have unfettered control of Fans
