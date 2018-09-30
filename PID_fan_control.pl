@@ -98,11 +98,13 @@ $config_file = '/root/nas_fan_control/PID_fan_control_config.ini';
 
 ##DEFAULT VALUES
 ## Use the values declared within script if the config file is not present
-$hd_ave_target = 38; # PID control loop will target this average temperature for the warmest N disks
-$Kp = 16/3;
-$Ki = 0;
-$Kd = 24;
-$hd_num_peak = 2;     # Number of warmest HDs to use when calculating average temp
+$default_hd_ave_target = 38;         # PID control loop will target this average temperature for the warmest N disks
+$default_Kp = 16/3;                  # PID control loop proportional gain
+$default_Ki = 0;                     # PID control loop integral gain
+$default_Kd = 24;                    # PID control loop derivative gain
+$default_hd_num_peak = 2;            # Number of warmest HDs to use when calculating average temp
+$default_hd_fan_duty_start     = 60; # HD fan duty cycle when script starts
+
 
 ## DEBUG LEVEL
 ## 0 means no debugging. 1,2,3,4 provide more verbosity
@@ -192,7 +194,7 @@ $hd_fan_duty_high      = 100;    # percentage on, ie 100% is full speed.
 $hd_fan_duty_med_high  = 80;
 $hd_fan_duty_med_low   = 50;
 $hd_fan_duty_low       = 20;    # some 120mm fans stall below 30.
-$hd_fan_duty_start     = 60;    # HD fan duty cycle when script starts.
+#$hd_fan_duty_start     = 60;    # HD fan duty cycle when script starts - defined in config file
 
 
 ## FAN ZONES
@@ -275,22 +277,8 @@ sub main
 {
     open LOG, ">>", $log or die $!;
     open DEBUG_LOG, ">>", $debug_log or die $!;
-    
-    # read config file, if present
-    if (do $config_file) {
-      $hd_ave_target = $config_Ta;
-      $Kp = $config_Kp;
-      $Ki = $config_Ki;
-      $Kd = $config_Kd;
-      $hd_num_peak = $config_num_disks;
-      print "Ta = $hd_ave_target\n";
-      print "Kp = $Kp\n";
-      print "Kd = $Kd\n";
-      print "Number of disks to average = $hd_num_peak\n";
-    } else {
-      warn "Config file not found.  Using default values";
-      print "Ta = $hd_ave_target\n";
-    }
+
+    ($hd_ave_target, $Kp, $Ki, $Kd, $num_disks, $hd_fan_duty_start) = read_config();
     
     # Print Log Header
     @hd_list = get_hd_list();
@@ -1252,4 +1240,21 @@ sub reset_bmc
     `$ipmitool bmc reset cold`;
     
     return;
+}
+
+sub read_config
+{
+    # read config file, if present
+    if (do $config_file) 
+    {
+        $hd_ave_target = $config_Ta // $default_hd_ave_target;
+        $Kp = $config_Kp // $default_Kp;
+        $Ki = $config_Ki // $default_Ki;
+        $Kd = $config_Kd // $default_Kd;
+        $num_disks = $config_num_disks // $default_hd_num_peak;            
+        $hd_fan_duty_start = $config_hd_fan_start // $default_hd_fan_duty_start;
+    } else {
+        dprint( 0, "Config file not found.  Using default values!\n");
+    }
+    return ($hd_ave_target, $Kp, $Ki, $Kd, $num_disks, $hd_fan_duty_start);
 }
