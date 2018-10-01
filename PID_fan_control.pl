@@ -312,6 +312,7 @@ sub main
     $hd_fan_duty = $hd_fan_duty_start;
 
     ($hd_min_temp, $hd_max_temp, $hd_ave_temp_old, @hd_temps) = get_hd_temps();
+    ($hd_ave_target, $Kp, $Ki, $Kd, $hd_num_peak, $hd_fan_duty_start, $config_time) = read_config();
     
     while()
     {
@@ -356,6 +357,15 @@ sub main
         {
             $last_hd_check_time = $check_time;
             @last_hd_list = @hd_list;
+            
+            # check to see if config file has been updated.  If so, update the config values and print a new log header
+            $config_time_new = (stat($config_file))[9];
+            if ($config_time_new > $config_time)
+            {
+                ($hd_ave_target, $Kp, $Ki, $Kd, $hd_num_peak, $hd_fan_duty_start, $config_time) = read_config();
+                print_log_header(@hd_list);
+            }
+            
     
             # we refresh the hd_list from camcontrol devlist
             # everytime because if you're adding/removing HDs we want
