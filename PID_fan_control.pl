@@ -1263,10 +1263,10 @@ sub read_config
         $Kd = $config_Kd // $default_Kd;
         $hd_num_peak = $config_num_disks // $default_hd_num_peak;            
         $hd_fan_duty_start = $config_hd_fan_start // $default_hd_fan_duty_start;
-	print "setting values from config file\n";
+	$config_time = (stat($config_file))[9];
     } else {
         dprint( 0, "Config file not found.  Using default values!\n");
 	print "config file not found\n";
     }
-    return ($hd_ave_target, $Kp, $Ki, $Kd, $hd_num_peak, $hd_fan_duty_start);
+    return ($hd_ave_target, $Kp, $Ki, $Kd, $hd_num_peak, $hd_fan_duty_start, $config_time);
 }
