@@ -233,7 +233,7 @@ $hd_polling_interval = 90;    # seconds
 ## FAN SPEED CHANGE DELAY TIME
 ## It takes the fans a few seconds to change speeds, we allow a grace before verifying. If we fail the verify
 ## we'll reset the BMC
-$fan_speed_change_delay = 20; # seconds
+$fan_speed_change_delay = 10; # seconds
 
 ## BMC REBOOT TIME
 ## It takes the BMC a number of seconds to reset and start providing sensible output. We'll only
