@@ -73,7 +73,14 @@
 # 2017-01-21 Refactored code to bump up CPU fan to help cool HD.  Drop the variabe CPU duty cycle, and just set to High,
 #            Added log file option without temps for every HD.
 # 2017-01-29 Add header to log file every X hours
-
+#
+# 2018-08-24 v1.0 Version optimized for 1500 rpm Noctua NF-F12 fans
+# 
+# 2018-08-25 Revised gains and thresholds for 3000 rpm Noctua NF-F12 iPPC fans
+#            Added 10s pause before checking fan speed, to allow time for fans to respond to latest gain change
+#
+# 2018-09-17 Revised HD temp average to only look at warmest 4 disks.
+#
 # TO DO
 #           Add option for no CPU fan control.
 ###############################################################################################
@@ -84,10 +91,11 @@
 ## 0 means no debugging. 1,2,3,4 provide more verbosity
 ## You should run this script in at least level 1 to verify its working correctly on your system
 $debug = 0;
+$debug_log = '/root/Debug_PID_fan_control.log';
 
 ## LOG
 $log = '/root/PID_fan_control.log';
-$log_temp_summary_only = 1;      # 1 if not logging individual HD temperatures.  0 if logging temp of each HD
+$log_temp_summary_only = 0;      # 1 if not logging individual HD temperatures.  0 if logging temp of each HD
 $log_header_hourly_interval = 2; # number of hours between log headers.  Valid options are 1, 2, 3, 4, 6 & 12.
                                  # log headers will always appear at the start of a log, at midnight and any 
                                  # time the list of HDs changes (if individual HD temperatures are logged)
@@ -103,11 +111,12 @@ $low_cpu_temp = 35;        # will go LOW when we fall below 35 again
 ## This is the temperature that we regard as being uncomfortable. The higher this is the
 ## more silent your system.
 ## Note, it is possible for your HDs to go above this... but if your cooling is good, they shouldn't.
-$hd_ave_target = 36.5;    # PID control loop will target this average temperature
+$hd_ave_target = 37.5;     # PID control loop will target this average temperature
 $hd_max_allowed_temp = 40; # celsius. PID control aborts and fans set to 100% duty cycle when a HD hits this temp.
                            # This ensures that no matter how poorly chosen the PID gains are, or how much of a spread
                            # there is between the average HD temperature and the maximum HD temperature, the HD fans 
                            # will be set to 100% if any drive reaches this temperature.
+$hd_num_peak = 4;          # Number of warmest HDs to use when calculating average temp
 
 ## CPU TEMP TO OVERRIDE HD FANS
 ## when the CPU climbs above this temperature, the HD fans will be overridden
@@ -137,11 +146,10 @@ $cpu_temp_control = 1;  # 1 if the script will control a CPU fan to control CPU 
 ## For example, if you used a gain of Kp = 8, and a T = 3 (3 minute interval), the new value is $Kp = 8/3.
 ## Kd values from the spinpid.sh script can be used directly here.
 ## https://forums.freenas.org/index.php?threads/script-to-control-fan-speed-in-response-to-hard-drive-temperatures.41294/page-4#post-285668
-$Kp = 16/3; # 5.333
+#$Kp = 8/3;
+$Kp = 16/3;
 $Ki = 0;
-#$Kd = 120; # changed from 120 to 100 on 2017-04-15 0722
-#$Kd = 100; # changed from 100 to 135 on 2017-04-16 0951
-$Kd = 135;
+$Kd =  96; # changed from 120 to 96 on 2018-08-27
 
 #######################
 ## FAN CONFIGURATION
@@ -152,7 +160,7 @@ $Kd = 135;
 ## Connected to the cpu_fan_header and the hd_fan_header.
 ## These values are used to verify high/low fan speeds and trigger a BMC reset if necessary.
 $cpu_max_fan_speed    = 1800;
-$hd_max_fan_speed     = 1500;
+$hd_max_fan_speed     = 3300;
 
 
 ## CPU FAN DUTY LEVELS
@@ -166,8 +174,8 @@ $fan_duty_low     = 30;
 $hd_fan_duty_high      = 100;    # percentage on, ie 100% is full speed.
 $hd_fan_duty_med_high  = 80;
 $hd_fan_duty_med_low   = 50;
-$hd_fan_duty_low       = 30;    # some 120mm fans stall below 30.
-$hd_fan_duty_start     = 65;    # HD fan duty cycle when script starts.
+$hd_fan_duty_low       = 20;    # some 120mm fans stall below 30.
+$hd_fan_duty_start     = 60;    # HD fan duty cycle when script starts.
 
 
 ## FAN ZONES
@@ -249,6 +257,7 @@ main();
 sub main
 {
     open LOG, ">>", $log or die $!;
+    open DEBUG_LOG, ">>", $debug_log or die $!;
     
     # Print Log Header
     @hd_list = get_hd_list();
@@ -378,6 +387,8 @@ sub main
             
             $hd_fan_mode = get_fan_mode();
             printf(LOG "%6s", $hd_fan_mode);
+	    
+	    sleep 10; # pause 10s to allow fans to change speed after setting it
             $ave_fan_speed = get_fan_ave_speed(@hd_fan_list);
             printf(LOG "%6s", $ave_fan_speed);
             printf(LOG "%4i/%-3i", $hd_fan_duty_old, $hd_fan_duty);
@@ -493,7 +504,14 @@ sub get_hd_temps
         }
     }
 
-    my $ave_temp = $temp_sum / $HD_count;
+    my @temps_sorted = sort { $a <=> $b } @temp_list;
+
+    $temp_sum = 0;
+    for (my $n = $hd_num_peak; $n > 0; $n = $n -1) {
+	$temp_sum += pop(@temps_sorted);
+	}
+
+    my $ave_temp = $temp_sum / $hd_num_peak;
 
     return ($min_temp, $max_temp, $ave_temp, @temp_list);
 }
@@ -832,7 +850,7 @@ sub print_log_header
     @hd_list = @_;
     my $timestring = build_time_string();
     my $datestring = build_date_string();
-    printf(LOG "\n\nPID Fan Controller Log  ---  Target HD Temperature = %5.2f deg C  ---  PID Control Gains: Kp = %6.3f, Ki = %6.3f, Kd = %5.1f\n         ", $hd_ave_target, $Kp, $Ki, $Kd);
+    printf(LOG "\n\nPID Fan Controller Log  ---  Target $hd_num_peak Disk HD Temperature = %5.2f deg C  ---  PID Control Gains: Kp = %6.3f, Ki = %6.3f, Kd = %5.1f\n         ", $hd_ave_target, $Kp, $Ki, $Kd);
     if ($log_temp_summary_only)
     {
         print LOG "   HD   Min";
@@ -888,7 +906,7 @@ sub dprint
     if( $debug > $level ) 
     {
         my $datestring = build_date_time_string();
-        print "$datestring: $output";
+        print DEBUG_LOG "$datestring: $output";
     }
 
     return;
