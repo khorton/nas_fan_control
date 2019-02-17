@@ -85,7 +85,7 @@
 #            PID gains and target average temperature.
 #
 # TO DO
-#           Add option for no CPU fan control.
+#           ??
 ###############################################################################################
 ## CONFIGURATION
 ################
@@ -184,17 +184,17 @@ $hd_max_fan_speed     = 3300;
 
 ## CPU FAN DUTY LEVELS
 ## These levels are used to control the CPU fans
-$fan_duty_high    = 100;        # percentage on, ie 100% is full speed.
-$fan_duty_med     = 60;
-$fan_duty_low     = 30;
+$fan_duty_high         = 100;    # percentage on, ie 100% is full speed.
+$fan_duty_med          =  60;
+$fan_duty_low          =  30;
 
 ## HD FAN DUTY LEVELS
 ## These levels are used to control the HD fans
 $hd_fan_duty_high      = 100;    # percentage on, ie 100% is full speed.
-$hd_fan_duty_med_high  = 80;
-$hd_fan_duty_med_low   = 50;
-$hd_fan_duty_low       = 20;    # some 120mm fans stall below 30.
-#$hd_fan_duty_start     = 60;    # HD fan duty cycle when script starts - defined in config file
+$hd_fan_duty_med_high  =  80;
+$hd_fan_duty_med_low   =  50;
+$hd_fan_duty_low       =  20;    # some 120mm fans stall below 30.
+#$hd_fan_duty_start    =  60;    # HD fan duty cycle when script starts - defined in config file
 
 
 ## FAN ZONES
@@ -203,7 +203,7 @@ $hd_fan_duty_low       = 20;    # some 120mm fans stall below 30.
 # You could switch the CPU/HD fans around, as long as you change the zones and fan header configurations.
 #
 # 0 = FAN1..5
-# 1 = FANA
+# 1 = FANA..FANC
 $cpu_fan_zone = 0;
 $hd_fan_zone  = 1;
 
