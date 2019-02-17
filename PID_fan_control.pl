@@ -12,6 +12,8 @@
 #    where the CPU fan zone also controls chassis exit fans.
 # 3. Add optional log of HD fan temperatures, PID loop values and commanded fan duty cycles.  The log may optionally contain
 #    a record of each HD temperature, or only the coolest and warmest HD temperatures.
+# 4. Added ability to specify the number of warmest disks to use when calculating the average temperature.
+# 5. Added ability to put certain configuration values in a configuration file that is checked each time around the control loop.
 
 # This script can be downloaded from : 
 # https://forums.freenas.org/index.php?threads/pid-fan-controller-perl-script.50908/
@@ -22,10 +24,6 @@
 # and CPU torture tests. It may work in X9 or X11 based systems, but this has not been tested.
 
 # It relies on you having two fan zones, FAN1..FAN4 and FANA..FANC.
-
-# The IPMI fan lower and upper fan speed thresholds must be adjusted to be compatible with the fans used.  Do not rely 
-# completely on manufacturer specs to determine the slowest and fastest possible fan speeds, as some fans have been found
-# to run at speeds that differ somewhat from the official specs.  See: 
 
 # To use this correctly, you should connect all your PWM HD fans, by splitters if necessary to the FANA..FANC headers, or to
 # the numbered FAN1..FAN4 headers.   The CPU, case and exhaust fans should then be connected to the other headers.  This script 
@@ -43,8 +41,45 @@
 # More information on CPU/Peripheral Zone can be found in this post:
 # https://forums.freenas.org/index.php?threads/thermal-and-accoustical-design-validation.28364/
 
-# stux
+# stux (+ editorial changes on Fan Zones from Kevin Horton)
 
+###############################################################################################
+
+# The IPMI fan lower and upper fan speed thresholds must be adjusted to be compatible with the fans used.  Do not rely 
+# completely on manufacturer specs to determine the slowest and fastest possible fan speeds, as some fans have been found
+# to run at speeds that differ somewhat from the official specs.  See: 
+# https://forums.freenas.org/index.php?resources/how-to-change-ipmi-sensor-thresholds-using-ipmitool.35/
+
+# The following ipmitool commands can be run when connected to the FreeNAS server via ssh.  They are useful to set a desired fan duty cycle before
+# checking the fan speeds.
+
+# Set duty cycle in Zone 0 to 100%: ipmitool raw 0x30 0x70 0x66 0x01 0x00 100  
+# Set duty cycle in Zone 0 to  50%: ipmitool raw 0x30 0x70 0x66 0x01 0x00 50
+# Set duty cycle in Zone 0 to  20%: ipmitool raw 0x30 0x70 0x66 0x01 0x00 20
+
+# Set duty cycle in Zone 1 to 100%: ipmitool raw 0x30 0x70 0x66 0x01 0x01 100
+# Set duty cycle in Zone 1 to  50%: ipmitool raw 0x30 0x70 0x66 0x01 0x01 50
+# Set duty cycle in Zone 1 to  20%: ipmitool raw 0x30 0x70 0x66 0x01 0x01 20
+
+# Check duty cycle in Zone 0:                   ipmitool raw 0x30 0x70 0x66 0x00 0x00
+# result is hex, with 64 being 100% duty cycle.  32 is 50% duty cycle.  14 is 20% duty cycle.
+
+#  Check duty cycle in Zone 1:                  ipmitool raw 0x30 0x70 0x66 0x00 0x01
+# result is hex, with 64 being 100% duty cycle.  32 is 50% duty cycle.  14 is 20% duty cycle.
+
+# Check fan speeds using: ipmitool sdr
+
+# Number of warmest disks to average
+# Originally, the script would calculate an average temperature for all disks, and vary fan speed as required to achieve the target 
+# temperature.  Later, the option was added to have the script only worry about the warmest X disks, and use the average of those
+# disks as the target.  This better accomadated the common situation where there are several disks that run several degrees warmer
+# than the others, and it is desired to keep those warm disks from exceeding a specified temperature.
+
+# If desired, certain settings may be defined in a configuration file that can be changed on the fly, while the script is running.
+# The script will check the latest modification time of the config file each time it determines the new fan duty cycle, and reload
+# the configuration data if it has changed.  This is useful when testing the script, as the PID control gains, average disk target
+# temperature and number of warmest disk temperatures to average
+# Kevin Horton
 ###############################################################################################
 # VERSION HISTORY
 #####################
@@ -83,10 +118,11 @@
 # 2018-08-25 Revised gains and thresholds for 3000 rpm Noctua NF-F12 iPPC fans
 #            Added 10s pause before checking fan speed, to allow time for fans to respond to latest gain change
 #
-# 2018-09-17 Revised HD temp average to only look at warmest 4 disks.
+# 2018-09-17 Revised HD temp average to only look at warmest X disks.
 #
-# 2018-09-27 Create branch "npeak" that uses config file to determine number of warmest disks to average, 
-#            PID gains and target average temperature.
+# 2018-09-27 Use config file to determine number of warmest disks to average, PID gains and target average temperature.
+#            The config file may be revised while the script is running, and the updated values will be read into the script 
+#            each time around the control loop.
 #
 # TO DO
 #           ??
@@ -118,7 +154,7 @@ $debug_log = '/root/Debug_PID_fan_control.log';
 
 ## LOG
 $log = '/root/PID_fan_control.log';
-$log_temp_summary_only = 0;      # 1 if not logging individual HD temperatures.  0 if logging temp of each HD
+$log_temp_summary_only      = 0; # 1 if not logging individual HD temperatures.  0 if logging temp of each HD
 $log_header_hourly_interval = 2; # number of hours between log headers.  Valid options are 1, 2, 3, 4, 6 & 12.
                                  # log headers will always appear at the start of a log, at midnight and any 
                                  # time the list of HDs changes (if individual HD temperatures are logged)
@@ -126,8 +162,8 @@ $log_header_hourly_interval = 2; # number of hours between log headers.  Valid o
 ## CPU THRESHOLD TEMPS
 ## A modern CPU can heat up from 35C to 60C in a second or two. The fan duty cycle is set based on this
 $high_cpu_temp = 55;       # will go HIGH when we hit
-$med_cpu_temp = 45;        # will go MEDIUM when we hit, or drop below again
-$low_cpu_temp = 35;        # will go LOW when we fall below 35 again
+$med_cpu_temp  = 45;       # will go MEDIUM when we hit, or drop below again
+$low_cpu_temp  = 35;       # will go LOW when we fall below 35 again
 
 ## HD THRESHOLD TEMPS
 ## HD change temperature slowly. 
@@ -139,7 +175,9 @@ $hd_max_allowed_temp = 40; # celsius. PID control aborts and fans set to 100% du
                            # This ensures that no matter how poorly chosen the PID gains are, or how much of a spread
                            # there is between the average HD temperature and the maximum HD temperature, the HD fans 
                            # will be set to 100% if any drive reaches this temperature.
-# $hd_num_peak = 4;        # define this value in the DEFAULT VALUES block at top of script
+
+## NUMBER OF WARMEST HD TO AVERAGE                           
+# $hd_num_peak = 4;        # average the temperatures of this many warmest hard drives when calculating the average disk temperature
 
 ## CPU TEMP TO OVERRIDE HD FANS
 ## when the CPU climbs above this temperature, the HD fans will be overridden
@@ -154,9 +192,9 @@ $cpu_hd_override_temp = 65;
 $hd_fans_cool_cpu = 1;      # 1 if the hd fans should spin up to cool the cpu, 0 otherwise
 
 ## HD FAN DUTY CYCLE TO OVERRIDE CPU FANS
-$cpu_fans_cool_hd            = 1;  # 1 if the CPU fans should spin up to cool the HDs, when needed.  0 otherwise.  This may be useful if 
-                                   #   the CPU fan zone also contains chassis exit fans, as an increase in chassis exit fan speed may 
-                                   #   increase the HD cooling air flow.
+$cpu_fans_cool_hd            = 1;  # 1 if the CPU fans should spin up to cool the HDs, when needed.  0 otherwise.  This may be 
+                                   #   useful if the CPU fan zone also contains chassis exit fans, as an increase in chassis exit 
+                                   #   fan speed may increase the HD cooling air flow.
 $hd_cpu_override_duty_cycle = 95;  # when the HD duty cycle equals or exceeds this value, the CPU fans may be overridden to help cool HDs
 
 ## CPU TEMP CONTROL
