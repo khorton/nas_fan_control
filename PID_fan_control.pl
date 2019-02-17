@@ -19,14 +19,18 @@
 ###############################################################################################
 # This script is designed to control both the CPU and HD fans in a Supermicro X10 based system according to both
 # the CPU and HD temperatures in order to minimize noise while providing sufficient cooling to deal with scrubs
-# and CPU torture tests. It may work in X9 based system, but this has not been tested.
+# and CPU torture tests. It may work in X9 or X11 based systems, but this has not been tested.
 
-# It relies on you having two fan zones.
+# It relies on you having two fan zones, FAN1..FAN4 and FANA..FANC.
 
-# To use this correctly, you should connect all your PWM HD fans, by splitters if necessary to the FANA header. 
-# CPU, case and exhaust fans should then be connected to the numbered (ie CPU based) headers.  This script will then control the
-# HD fans in response to the HD temp, and the other fans in response to CPU temperature. When CPU temperature is high the HD fans.
-# will be used to provide additional cooling, if you specify cpu/hd shared cooling.
+# The IPMI fan lower and upper fan speed thresholds must be adjusted to be compatible with the fans used.  Do not rely 
+# completely on manufacturer specs to determine the slowest and fastest possible fan speeds, as some fans have been found
+# to run at speeds that differ somewhat from the official specs.  See: 
+
+# To use this correctly, you should connect all your PWM HD fans, by splitters if necessary to the FANA..FANC headers, or to
+# the numbered FAN1..FAN4 headers.   The CPU, case and exhaust fans should then be connected to the other headers.  This script 
+# will then control the HD fans in response to the HD temp, and the other fans in response to CPU temperature. When CPU 
+# temperature is high the HD fans will be used to provide additional cooling, if you specify cpu/hd shared cooling.
 
 # If the fans should be high, and they are stuck low, or vice-versa, the BMC will be rebooted, thus it is critical to set the
 # cpu/hd_max_fan_speed variables correctly.
@@ -360,6 +364,7 @@ sub main
             
             # check to see if config file has been updated.  If so, update the config values and print a new log header
             $config_time_new = (stat($config_file))[9];
+
             if ($config_time_new > $config_time)
             {
                 ($hd_ave_target, $Kp, $Ki, $Kd, $hd_num_peak, $hd_fan_duty_start, $config_time) = read_config();
