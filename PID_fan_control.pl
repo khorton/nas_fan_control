@@ -125,7 +125,7 @@
 #            each time around the control loop.
 #
 # TO DO
-#           ??
+#           Do not change fan speed due to calculated Tave changes when switching config scripts
 ###############################################################################################
 ## CONFIGURATION
 ################
