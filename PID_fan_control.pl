@@ -161,8 +161,8 @@ $log_header_hourly_interval = 2; # number of hours between log headers.  Valid o
 
 ## CPU THRESHOLD TEMPS
 ## A modern CPU can heat up from 35C to 60C in a second or two. The fan duty cycle is set based on this
-$high_cpu_temp = 55;       # will go HIGH when we hit
-$med_cpu_temp  = 45;       # will go MEDIUM when we hit, or drop below again
+$high_cpu_temp = 60;       # will go HIGH when we hit
+$med_cpu_temp  = 50;       # will go MEDIUM when we hit, or drop below again
 $low_cpu_temp  = 35;       # will go LOW when we fall below 35 again
 
 ## HD THRESHOLD TEMPS
