@@ -84,6 +84,9 @@
 # 2018-09-27 Create branch "npeak" that uses config file to determine number of warmest disks to average, 
 #            PID gains and target average temperature.
 #
+# 2020-01-01 Merged options for selectable number of disks to average and certain settings in config file to 
+#            Master branch
+#
 # TO DO
 #           Add option for no CPU fan control.
 ###############################################################################################
