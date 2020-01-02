@@ -81,6 +81,9 @@
 #
 # 2018-09-17 Revised HD temp average to only look at warmest 4 disks.
 #
+# 2020-01-01 Merged options for selectable number of disks to average and certain settings in config file to 
+#            Master branch
+#
 # TO DO
 #           Add option for no CPU fan control.
 ###############################################################################################
