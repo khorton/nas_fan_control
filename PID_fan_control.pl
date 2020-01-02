@@ -12,6 +12,8 @@
 #    where the CPU fan zone also controls chassis exit fans.
 # 3. Add optional log of HD fan temperatures, PID loop values and commanded fan duty cycles.  The log may optionally contain
 #    a record of each HD temperature, or only the coolest and warmest HD temperatures.
+# 4. Added ability to specify the number of warmest disks to use when calculating the average temperature.
+# 5. Added ability to put certain configuration values in a configuration file that is checked each time around the control loop.
 
 # This script can be downloaded from : 
 # https://forums.freenas.org/index.php?threads/pid-fan-controller-perl-script.50908/
@@ -19,14 +21,14 @@
 ###############################################################################################
 # This script is designed to control both the CPU and HD fans in a Supermicro X10 based system according to both
 # the CPU and HD temperatures in order to minimize noise while providing sufficient cooling to deal with scrubs
-# and CPU torture tests. It may work in X9 based system, but this has not been tested.
+# and CPU torture tests. It may work in X9 or X11 based systems, but this has not been tested.
 
-# It relies on you having two fan zones.
+# It relies on you having two fan zones, FAN1..FAN4 and FANA..FANC.
 
-# To use this correctly, you should connect all your PWM HD fans, by splitters if necessary to the FANA header. 
-# CPU, case and exhaust fans should then be connected to the numbered (ie CPU based) headers.  This script will then control the
-# HD fans in response to the HD temp, and the other fans in response to CPU temperature. When CPU temperature is high the HD fans.
-# will be used to provide additional cooling, if you specify cpu/hd shared cooling.
+# To use this correctly, you should connect all your PWM HD fans, by splitters if necessary to the FANA..FANC headers, or to
+# the numbered FAN1..FAN4 headers.   The CPU, case and exhaust fans should then be connected to the other headers.  This script 
+# will then control the HD fans in response to the HD temp, and the other fans in response to CPU temperature. When CPU 
+# temperature is high the HD fans will be used to provide additional cooling, if you specify cpu/hd shared cooling.
 
 # If the fans should be high, and they are stuck low, or vice-versa, the BMC will be rebooted, thus it is critical to set the
 # cpu/hd_max_fan_speed variables correctly.
@@ -39,8 +41,45 @@
 # More information on CPU/Peripheral Zone can be found in this post:
 # https://forums.freenas.org/index.php?threads/thermal-and-accoustical-design-validation.28364/
 
-# stux
+# stux (+ editorial changes on Fan Zones from Kevin Horton)
 
+###############################################################################################
+
+# The IPMI fan lower and upper fan speed thresholds must be adjusted to be compatible with the fans used.  Do not rely 
+# completely on manufacturer specs to determine the slowest and fastest possible fan speeds, as some fans have been found
+# to run at speeds that differ somewhat from the official specs.  See: 
+# https://forums.freenas.org/index.php?resources/how-to-change-ipmi-sensor-thresholds-using-ipmitool.35/
+
+# The following ipmitool commands can be run when connected to the FreeNAS server via ssh.  They are useful to set a desired fan duty cycle before
+# checking the fan speeds.
+
+# Set duty cycle in Zone 0 to 100%: ipmitool raw 0x30 0x70 0x66 0x01 0x00 100  
+# Set duty cycle in Zone 0 to  50%: ipmitool raw 0x30 0x70 0x66 0x01 0x00 50
+# Set duty cycle in Zone 0 to  20%: ipmitool raw 0x30 0x70 0x66 0x01 0x00 20
+
+# Set duty cycle in Zone 1 to 100%: ipmitool raw 0x30 0x70 0x66 0x01 0x01 100
+# Set duty cycle in Zone 1 to  50%: ipmitool raw 0x30 0x70 0x66 0x01 0x01 50
+# Set duty cycle in Zone 1 to  20%: ipmitool raw 0x30 0x70 0x66 0x01 0x01 20
+
+# Check duty cycle in Zone 0:                   ipmitool raw 0x30 0x70 0x66 0x00 0x00
+# result is hex, with 64 being 100% duty cycle.  32 is 50% duty cycle.  14 is 20% duty cycle.
+
+#  Check duty cycle in Zone 1:                  ipmitool raw 0x30 0x70 0x66 0x00 0x01
+# result is hex, with 64 being 100% duty cycle.  32 is 50% duty cycle.  14 is 20% duty cycle.
+
+# Check fan speeds using: ipmitool sdr
+
+# Number of warmest disks to average
+# Originally, the script would calculate an average temperature for all disks, and vary fan speed as required to achieve the target 
+# temperature.  Later, the option was added to have the script only worry about the warmest X disks, and use the average of those
+# disks as the target.  This better accomadated the common situation where there are several disks that run several degrees warmer
+# than the others, and it is desired to keep those warm disks from exceeding a specified temperature.
+
+# If desired, certain settings may be defined in a configuration file that can be changed on the fly, while the script is running.
+# The script will check the latest modification time of the config file each time it determines the new fan duty cycle, and reload
+# the configuration data if it has changed.  This is useful when testing the script, as the PID control gains, average disk target
+# temperature and number of warmest disk temperatures to average
+# Kevin Horton
 ###############################################################################################
 # VERSION HISTORY
 #####################
@@ -79,16 +118,36 @@
 # 2018-08-25 Revised gains and thresholds for 3000 rpm Noctua NF-F12 iPPC fans
 #            Added 10s pause before checking fan speed, to allow time for fans to respond to latest gain change
 #
-# 2018-09-17 Revised HD temp average to only look at warmest 4 disks.
+# 2018-09-17 Revised HD temp average to only look at warmest X disks.
+#
+# 2018-09-27 Use config file to determine number of warmest disks to average, PID gains and target average temperature.
+#            The config file may be revised while the script is running, and the updated values will be read into the script 
+#            each time around the control loop.
 #
 # 2020-01-01 Merged options for selectable number of disks to average and certain settings in config file to 
 #            Master branch
 #
 # TO DO
-#           Add option for no CPU fan control.
+#           Do not change fan speed due to calculated Tave changes when switching config scripts
 ###############################################################################################
 ## CONFIGURATION
 ################
+
+##CONFIG FILE
+## Read following config file at start and every X minutes to determine number of warmest disks to average,
+## target average temperature and PID gains.  If file is not available, or corrupt, use defaults specified
+## in this script.
+$config_file = '/root/nas_fan_control/PID_fan_control_config.ini';
+
+##DEFAULT VALUES
+## Use the values declared within script if the config file is not present
+$default_hd_ave_target = 38;         # PID control loop will target this average temperature for the warmest N disks
+$default_Kp = 16/3;                  # PID control loop proportional gain
+$default_Ki = 0;                     # PID control loop integral gain
+$default_Kd = 24;                    # PID control loop derivative gain
+$default_hd_num_peak = 2;            # Number of warmest HDs to use when calculating average temp
+$default_hd_fan_duty_start     = 60; # HD fan duty cycle when script starts
+
 
 ## DEBUG LEVEL
 ## 0 means no debugging. 1,2,3,4 provide more verbosity
@@ -98,7 +157,7 @@ $debug_log = '/root/Debug_PID_fan_control.log';
 
 ## LOG
 $log = '/root/PID_fan_control.log';
-$log_temp_summary_only = 0;      # 1 if not logging individual HD temperatures.  0 if logging temp of each HD
+$log_temp_summary_only      = 0; # 1 if not logging individual HD temperatures.  0 if logging temp of each HD
 $log_header_hourly_interval = 2; # number of hours between log headers.  Valid options are 1, 2, 3, 4, 6 & 12.
                                  # log headers will always appear at the start of a log, at midnight and any 
                                  # time the list of HDs changes (if individual HD temperatures are logged)
@@ -106,20 +165,22 @@ $log_header_hourly_interval = 2; # number of hours between log headers.  Valid o
 ## CPU THRESHOLD TEMPS
 ## A modern CPU can heat up from 35C to 60C in a second or two. The fan duty cycle is set based on this
 $high_cpu_temp = 55;       # will go HIGH when we hit
-$med_cpu_temp = 45;        # will go MEDIUM when we hit, or drop below again
-$low_cpu_temp = 35;        # will go LOW when we fall below 35 again
+$med_cpu_temp  = 45;       # will go MEDIUM when we hit, or drop below again
+$low_cpu_temp  = 35;       # will go LOW when we fall below 35 again
 
 ## HD THRESHOLD TEMPS
 ## HD change temperature slowly. 
 ## This is the temperature that we regard as being uncomfortable. The higher this is the
 ## more silent your system.
 ## Note, it is possible for your HDs to go above this... but if your cooling is good, they shouldn't.
-$hd_ave_target = 37.5;     # PID control loop will target this average temperature
+# $hd_ave_target = 38.0;   # define this value in the DEFAULT VALUES block at top of script
 $hd_max_allowed_temp = 40; # celsius. PID control aborts and fans set to 100% duty cycle when a HD hits this temp.
                            # This ensures that no matter how poorly chosen the PID gains are, or how much of a spread
                            # there is between the average HD temperature and the maximum HD temperature, the HD fans 
                            # will be set to 100% if any drive reaches this temperature.
-$hd_num_peak = 4;          # Number of warmest HDs to use when calculating average temp
+
+## NUMBER OF WARMEST HD TO AVERAGE                           
+# $hd_num_peak = 4;        # average the temperatures of this many warmest hard drives when calculating the average disk temperature
 
 ## CPU TEMP TO OVERRIDE HD FANS
 ## when the CPU climbs above this temperature, the HD fans will be overridden
@@ -134,9 +195,9 @@ $cpu_hd_override_temp = 65;
 $hd_fans_cool_cpu = 1;      # 1 if the hd fans should spin up to cool the cpu, 0 otherwise
 
 ## HD FAN DUTY CYCLE TO OVERRIDE CPU FANS
-$cpu_fans_cool_hd            = 1;  # 1 if the CPU fans should spin up to cool the HDs, when needed.  0 otherwise.  This may be useful if 
-                                   #   the CPU fan zone also contains chassis exit fans, as an increase in chassis exit fan speed may 
-                                   #   increase the HD cooling air flow.
+$cpu_fans_cool_hd            = 1;  # 1 if the CPU fans should spin up to cool the HDs, when needed.  0 otherwise.  This may be 
+                                   #   useful if the CPU fan zone also contains chassis exit fans, as an increase in chassis exit 
+                                   #   fan speed may increase the HD cooling air flow.
 $hd_cpu_override_duty_cycle = 95;  # when the HD duty cycle equals or exceeds this value, the CPU fans may be overridden to help cool HDs
 
 ## CPU TEMP CONTROL
@@ -150,9 +211,9 @@ $cpu_temp_control = 1;  # 1 if the script will control a CPU fan to control CPU 
 ## Kd values from the spinpid.sh script can be used directly here.
 ## https://forums.freenas.org/index.php?threads/script-to-control-fan-speed-in-response-to-hard-drive-temperatures.41294/page-4#post-285668
 #$Kp = 8/3;
-$Kp = 16/3;
-$Ki = 0;
-$Kd =  96; # changed from 120 to 96 on 2018-08-27
+# $Kp = 16/3; # define this value in the DEFAULT VALUES block at top of script
+# $Ki = 0;    # define this value in the DEFAULT VALUES block at top of script
+# $Kd =  96;  # define this value in the DEFAULT VALUES block at top of script
 
 #######################
 ## FAN CONFIGURATION
@@ -168,17 +229,17 @@ $hd_max_fan_speed     = 3300;
 
 ## CPU FAN DUTY LEVELS
 ## These levels are used to control the CPU fans
-$fan_duty_high    = 100;        # percentage on, ie 100% is full speed.
-$fan_duty_med     = 60;
-$fan_duty_low     = 30;
+$fan_duty_high         = 100;    # percentage on, ie 100% is full speed.
+$fan_duty_med          =  60;
+$fan_duty_low          =  30;
 
 ## HD FAN DUTY LEVELS
 ## These levels are used to control the HD fans
 $hd_fan_duty_high      = 100;    # percentage on, ie 100% is full speed.
-$hd_fan_duty_med_high  = 80;
-$hd_fan_duty_med_low   = 50;
-$hd_fan_duty_low       = 20;    # some 120mm fans stall below 30.
-$hd_fan_duty_start     = 60;    # HD fan duty cycle when script starts.
+$hd_fan_duty_med_high  =  80;
+$hd_fan_duty_med_low   =  50;
+$hd_fan_duty_low       =  16;    # some 120mm fans stall below 30.
+#$hd_fan_duty_start    =  60;    # HD fan duty cycle when script starts - defined in config file
 
 
 ## FAN ZONES
@@ -187,7 +248,7 @@ $hd_fan_duty_start     = 60;    # HD fan duty cycle when script starts.
 # You could switch the CPU/HD fans around, as long as you change the zones and fan header configurations.
 #
 # 0 = FAN1..5
-# 1 = FANA
+# 1 = FANA..FANC
 $cpu_fan_zone = 0;
 $hd_fan_zone  = 1;
 
@@ -261,6 +322,8 @@ sub main
 {
     open LOG, ">>", $log or die $!;
     open DEBUG_LOG, ">>", $debug_log or die $!;
+
+    ($hd_ave_target, $Kp, $Ki, $Kd, $hd_num_peak, $hd_fan_duty_start) = read_config();
     
     # Print Log Header
     @hd_list = get_hd_list();
@@ -294,6 +357,7 @@ sub main
     $hd_fan_duty = $hd_fan_duty_start;
 
     ($hd_min_temp, $hd_max_temp, $hd_ave_temp_old, @hd_temps) = get_hd_temps();
+    ($hd_ave_target, $Kp, $Ki, $Kd, $hd_num_peak, $hd_fan_duty_start, $config_time) = read_config();
     
     while()
     {
@@ -338,6 +402,16 @@ sub main
         {
             $last_hd_check_time = $check_time;
             @last_hd_list = @hd_list;
+            
+            # check to see if config file has been updated.  If so, update the config values and print a new log header
+            $config_time_new = (stat($config_file))[9];
+
+            if ($config_time_new > $config_time)
+            {
+                ($hd_ave_target, $Kp, $Ki, $Kd, $hd_num_peak, $hd_fan_duty_start, $config_time) = read_config();
+                print_log_header(@hd_list);
+            }
+            
     
             # we refresh the hd_list from camcontrol devlist
             # everytime because if you're adding/removing HDs we want
@@ -428,7 +502,7 @@ sub main
 ################################################# SUBS
 sub get_hd_list
 {
-    my $disk_list = `camcontrol devlist | grep -v "SSD" | grep -v "Verbatim" | grep -v "Kingston" | sed 's:.*(::;s:).*::;s:,pass[0-9]*::;s:pass[0-9]*,::' | egrep '^[a]*da[0-9]+\$' | tr '\012' ' '`;
+    my $disk_list = `camcontrol devlist | grep -v "SSD" | grep -v "Verbatim" | grep -v "Kingston" | grep -v "Elements" | sed 's:.*(::;s:).*::;s:,pass[0-9]*::;s:pass[0-9]*,::' | egrep '^[a]*da[0-9]+\$' | tr '\012' ' '`;
     dprint(3,"$disk_list\n");
 
     my @vals = split(" ", $disk_list);
@@ -1222,4 +1296,23 @@ sub reset_bmc
     `$ipmitool bmc reset cold`;
     
     return;
+}
+
+sub read_config
+{
+    # read config file, if present
+    if (do $config_file) 
+    {
+        $hd_ave_target = $config_Ta // $default_hd_ave_target;
+        $Kp = $config_Kp // $default_Kp;
+        $Ki = $config_Ki // $default_Ki;
+        $Kd = $config_Kd // $default_Kd;
+        $hd_num_peak = $config_num_disks // $default_hd_num_peak;            
+        $hd_fan_duty_start = $config_hd_fan_start // $default_hd_fan_duty_start;
+	$config_time = (stat($config_file))[9];
+    } else {
+        dprint( 0, "Config file not found.  Using default values!\n");
+	print "config file not found\n";
+    }
+    return ($hd_ave_target, $Kp, $Ki, $Kd, $hd_num_peak, $hd_fan_duty_start, $config_time);
 }
