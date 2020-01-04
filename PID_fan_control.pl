@@ -21,9 +21,10 @@
 ###############################################################################################
 # This script is designed to control both the CPU and HD fans in a Supermicro X10 based system according to both
 # the CPU and HD temperatures in order to minimize noise while providing sufficient cooling to deal with scrubs
-# and CPU torture tests. It may work in X9 or X11 based systems, but this has not been tested.
+# and CPU torture tests. It may work in X9 based systems, but this has not been tested.  It has been found to work on at least
+# the X11SSM-F.
 
-# It relies on you having two fan zones, FAN1..FAN4 and FANA..FANC.
+# It relies on the motherboard having two fan zones, FAN1..FAN4 and FANA..FANC.
 
 # To use this correctly, you should connect all your PWM HD fans, by splitters if necessary to the FANA..FANC headers, or to
 # the numbered FAN1..FAN4 headers.   The CPU, case and exhaust fans should then be connected to the other headers.  This script 
