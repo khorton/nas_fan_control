@@ -141,14 +141,13 @@
 $config_file = '/root/nas_fan_control/PID_fan_control_config.ini';
 
 ##DEFAULT VALUES
-## Use the values declared within script if the config file is not present
-$default_hd_ave_target = 38;         # PID control loop will target this average temperature for the warmest N disks
-$default_Kp = 16/3;                  # PID control loop proportional gain
-$default_Ki = 0;                     # PID control loop integral gain
-$default_Kd = 24;                    # PID control loop derivative gain
-$default_hd_num_peak = 2;            # Number of warmest HDs to use when calculating average temp
-$default_hd_fan_duty_start     = 60; # HD fan duty cycle when script starts
-
+## Use the values declared belowif the config file is not present
+$hd_ave_target = 38;         # PID control loop will target this average temperature for the warmest N disks
+$Kp = 16/3;                  # PID control loop proportional gain
+$Ki = 0;                     # PID control loop integral gain
+$Kd = 24;                    # PID control loop derivative gain
+$hd_num_peak = 2;            # Number of warmest HDs to use when calculating average temp
+$hd_fan_duty_start     = 60; # HD fan duty cycle when script starts
 
 ## DEBUG LEVEL
 ## 0 means no debugging. 1,2,3,4 provide more verbosity

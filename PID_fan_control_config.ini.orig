@@ -1,6 +1,0 @@
-our $config_num_disks = 4; # number of warmest disks to use for average temperature
-our $config_Ta = 38;       # target average temperature for X warmest disks
-our $config_Kp = 16/3;
-our $config_Ki = 0;
-our $config_Kd = 48;
-our $config_hd_fan_start = 36; # HD fan duty cycle when script starts
