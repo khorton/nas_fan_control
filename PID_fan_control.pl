@@ -141,7 +141,7 @@
 $config_file = '/root/nas_fan_control/PID_fan_control_config.ini';
 
 ##DEFAULT VALUES
-## Use the values declared belowif the config file is not present
+## Use the values declared below if the config file is not present
 $hd_ave_target = 38;         # PID control loop will target this average temperature for the warmest N disks
 $Kp = 16/3;                  # PID control loop proportional gain
 $Ki = 0;                     # PID control loop integral gain
