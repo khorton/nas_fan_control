@@ -313,6 +313,9 @@ $last_cpu_temp = 0;
 use POSIX qw(strftime);
 use Time::Local;
 
+$SIG{INT} = sub { print "\nCaught SIGINT: setting fan mode to optimal\n"; set_fan_mode("optimal"); exit(0); };
+$SIG{TERM} = sub { print "\nCaught SIGTERM: setting fan mode to optimal\n"; set_fan_mode("optimal"); exit(0); };
+
 # start the controller
 main();
 
