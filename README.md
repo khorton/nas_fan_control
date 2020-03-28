@@ -10,13 +10,6 @@ https://forums.freenas.org/index.php?threads/script-hybrid-cpu-hd-fan-zone-contr
 
 The hard drive fans are connected to fan headers assigned to the hard drive temperature control portion of the script.  The chassis exit fans and the CPU cooler are connected to fan headers assigned to the CPU temperature control portion of the script.
 
-PID_fan_control_borg.pl - This is the same basic script as above, but with settings and gains as used by the author on a Fractal Design Node 804, with the following fans:
-
-* Deep Cool UF140: hard drive side of the case on the back
-* Deep Cool UF110: hard drive side of the case on the front, in the upper of two available locations.
-* Stock Fractal Design exit fan on the motherboard side of the case, running at medium speed.
-* Thermaltake Gravity i1: CPU cooler
-
 See the scripts for more info and commentary.
 
 Discussion on the FreeNAS forums: https://forums.freenas.org/index.php?threads/pid-fan-controller-perl-script.50908/
