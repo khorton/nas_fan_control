@@ -142,6 +142,7 @@ $config_file = '/root/nas_fan_control/PID_fan_control_config.ini';
 
 ##DEFAULT VALUES
 ## Use the values declared below if the config file is not present
+$stop_default = "full";      # Default state to fans
 $hd_ave_target = 38;         # PID control loop will target this average temperature for the warmest N disks
 $Kp = 16/3;                  # PID control loop proportional gain
 $Ki = 0;                     # PID control loop integral gain
@@ -313,9 +314,9 @@ $last_cpu_temp = 0;
 use POSIX qw(strftime);
 use Time::Local;
 
-$SIG{INT} = sub { print "\nCaught SIGINT: setting fan mode to optimal\n"; set_fan_mode("optimal"); exit(0); };
-$SIG{TERM} = sub { print "\nCaught SIGTERM: setting fan mode to optimal\n"; set_fan_mode("optimal"); exit(0); };
-$SIG{HUP} = sub { print "\nCaught SIGHUP: setting fan mode to optimal\n"; set_fan_mode("optimal"); exit(0); };
+$SIG{INT} = sub { print "\nCaught SIGINT: setting fan mode to $stop_default\n"; set_fan_mode($stop_default); exit(0); };
+$SIG{TERM} = sub { print "\nCaught SIGTERM: setting fan mode to $stop_default\n"; set_fan_mode($stop_default); exit(0); };
+$SIG{HUP} = sub { print "\nCaught SIGHUP: setting fan mode to $stop_default\n"; set_fan_mode($stop_default); exit(0); };
 
 # start the controller
 main();
@@ -506,7 +507,7 @@ sub main
 ################################################# SUBS
 sub get_hd_list
 {
-    my $disk_list = `camcontrol devlist | grep -v "SSD" | grep -v "Verbatim" | grep -v "Kingston" | grep -v "Elements" | sed 's:.*(::;s:).*::;s:,pass[0-9]*::;s:pass[0-9]*,::' | egrep '^[a]*da[0-9]+\$' | tr '\012' ' '`;
+    my $disk_list = `camcontrol devlist | grep -v "SSD" | grep -v "ADATA" | grep -v "Verbatim" | grep -v "Kingston" | grep -v "Elements" | sed 's:.*(::;s:).*::;s:,pass[0-9]*::;s:pass[0-9]*,::' | egrep '^[a]*da[0-9]+\$' | tr '\012' ' '`;
     dprint(3,"$disk_list\n");
 
     my @vals = split(" ", $disk_list);
@@ -982,12 +983,12 @@ sub dprint
 {
     my ( $level,$output) = @_;
     
-#    print( "dprintf: debug = $debug, level = $level, output = \"$output\"\n" );
+    #    print( "dprintf: debug = $debug, level = $level, output = \"$output\"\n" );
     
     if( $debug > $level ) 
     {
         my $datestring = build_date_time_string();
-        print DEBUG_LOG "$datestring: $output";
+        print( "DEBUG_LOG $datestring: $output");
     }
 
     return;
@@ -1144,15 +1145,15 @@ sub decide_cpu_fan_level
                 }
                 $cpu_fan = "high";
             }
-            elsif( $cpu_temp >= $med_cpu_temp )
+            elsif( $cpu_temp >= $med_cpu_temp && $cpu_fan ne "high")
             {
                 if( $cpu_fan ne "med" )
                 {
-                    dprint( 0, "CPU Temp: $cpu_temp >= $med_cpu_temp, CPU Fan going med.\n");
+                    dprint( 0, "CPU Temp: $cpu_temp >= $med_cpu_temp, CPU Fan going med. from $cpu_fan\n");
                 }
                 $cpu_fan = "med";
             }
-            elsif( $cpu_temp > $low_cpu_temp && ($cpu_fan eq "high" || $cpu_fan eq "" ) )
+            elsif( $cpu_temp > $low_cpu_temp && $cpu_temp <= $med_cpu_temp && ($cpu_fan eq "high" || $cpu_fan eq "" ) )
             {
                 dprint( 0, "CPU Temp: $cpu_temp dropped below $med_cpu_temp, CPU Fan going med.\n");
             
