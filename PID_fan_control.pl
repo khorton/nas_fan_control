@@ -186,7 +186,7 @@ $hd_max_allowed_temp = 40; # celsius. PID control aborts and fans set to 100% du
 ## when the CPU climbs above this temperature, the HD fans will be overridden
 ## this prevents the HD fans from spinning up when the CPU fans are capable of providing 
 ## sufficient cooling.
-$cpu_hd_override_temp = 65;
+$cpu_hd_override_temp = 68;
 
 ## CPU/HD SHARED COOLING
 ## If your HD fans contribute to the cooling of your CPU you should set this value.
