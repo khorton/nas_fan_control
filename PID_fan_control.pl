@@ -1111,8 +1111,11 @@ sub decide_cpu_fan_level
     
     if ($cpu_fan_override == 1)
     {
-        $cpu_fan = "high";
-        dprint( 0, "CPU fan set to high to help cool HDs.\n");
+        if( $cpu_fan ne "high" )
+        {
+            $cpu_fan = "high";
+            dprint( 0, "CPU fan set to high to help cool HDs.\n");
+        }
     }
     else
     {
