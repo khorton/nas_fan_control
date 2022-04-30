@@ -1319,6 +1319,12 @@ sub read_config
 	$config_time = (stat($config_file))[9];
     } else {
         dprint( 0, "Config file not found.  Using default values!\n");
+        $hd_ave_target = $default_hd_ave_target;
+        $Kp = $default_Kp;
+        $Ki = $default_Ki;
+        $Kd = $default_Kd;
+        $hd_num_peak = $default_hd_num_peak;            
+        $hd_fan_duty_start = $default_hd_fan_duty_start;
 	print "config file not found\n";
     }
     return ($hd_ave_target, $Kp, $Ki, $Kd, $hd_num_peak, $hd_fan_duty_start, $config_time);
