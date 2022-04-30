@@ -254,11 +254,13 @@ $hd_fan_zone  = 1;
 
 
 ## FAN HEADERS
-## these are the fan headers which are used to verify the fan zone is high. FAN1+ are all in Zone 0, FANA is Zone 1.
+## these are the fan headers which are used to verify the fan zone is high. FAN1, FAN2, etc  are all in Zone 0, 
+## FANA, FANB, etc are in  Zone 1.  
+## The values that are set must match a working FAN header as seen in "ipmitool sdr" 
 ## cpu_fan_header should be in the cpu_fan_zone
 ## hd_fan_header should be in the hd_fan_zone
-$cpu_fan_header = "FAN2";                 # used for printing to standard output for debugging   
-$hd_fan_header  = "FANB";                 # used for printing to standard output for debugging   
+$cpu_fan_header = "FAN2";                 # used for CPU Fan monitoring  and forprinting to standard output for debugging   
+$hd_fan_header  = "FANB";                 # used for HD Fan monitoring and printing to standard output for debugging   
 @hd_fan_list = ("FANA", "FANB", "FANC");  # used for logging to file  
 
 
