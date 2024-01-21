@@ -154,7 +154,7 @@ $hd_fan_duty_start     = 60; # HD fan duty cycle when script starts
 ## DEBUG LEVEL
 ## 0 means no debugging. 1,2,3,4 provide more verbosity
 ## You should run this script in at least level 1 to verify its working correctly on your system
-$debug = 0;
+$debug = 2;
 $debug_log = '/root/Debug_PID_fan_control.log';
 
 ## LOG
@@ -182,7 +182,7 @@ $hd_max_allowed_temp = 40; # celsius. PID control aborts and fans set to 100% du
                            # will be set to 100% if any drive reaches this temperature.
 
 ## NUMBER OF WARMEST HD TO AVERAGE                           
-# $hd_num_peak = 4;        # average the temperatures of this many warmest hard drives when calculating the average disk temperature
+$hd_num_peak = 4;        # average the temperatures of this many warmest hard drives when calculating the average disk temperature
 
 ## CPU TEMP TO OVERRIDE HD FANS
 ## when the CPU climbs above this temperature, the HD fans will be overridden
@@ -194,10 +194,10 @@ $cpu_hd_override_temp = 65;
 ## If your HD fans contribute to the cooling of your CPU you should set this value.
 ## It will mean when you CPU heats up your HD fans will be turned up to help cool the
 ## case/cpu. This would only not apply if your HDs and fans are in a separate thermal compartment.
-$hd_fans_cool_cpu = 1;      # 1 if the hd fans should spin up to cool the cpu, 0 otherwise
+$hd_fans_cool_cpu = 0;      # 1 if the hd fans should spin up to cool the cpu, 0 otherwise
 
 ## HD FAN DUTY CYCLE TO OVERRIDE CPU FANS
-$cpu_fans_cool_hd            = 1;  # 1 if the CPU fans should spin up to cool the HDs, when needed.  0 otherwise.  This may be 
+$cpu_fans_cool_hd            = 0;  # 1 if the CPU fans should spin up to cool the HDs, when needed.  0 otherwise.  This may be 
                                    #   useful if the CPU fan zone also contains chassis exit fans, as an increase in chassis exit 
                                    #   fan speed may increase the HD cooling air flow.
 $hd_cpu_override_duty_cycle = 95;  # when the HD duty cycle equals or exceeds this value, the CPU fans may be overridden to help cool HDs
@@ -225,8 +225,8 @@ $cpu_temp_control = 1;  # 1 if the script will control a CPU fan to control CPU 
 ## You need to determine the actual max fan speeds that are achieved by the fans
 ## Connected to the cpu_fan_header and the hd_fan_header.
 ## These values are used to verify high/low fan speeds and trigger a BMC reset if necessary.
-$cpu_max_fan_speed    = 1800;
-$hd_max_fan_speed     = 3300;
+$cpu_max_fan_speed    = 5600;
+$hd_max_fan_speed     = 1800;
 
 
 ## CPU FAN DUTY LEVELS
@@ -240,7 +240,7 @@ $fan_duty_low          =  30;
 $hd_fan_duty_high      = 100;    # percentage on, ie 100% is full speed.
 $hd_fan_duty_med_high  =  80;
 $hd_fan_duty_med_low   =  50;
-$hd_fan_duty_low       =  16;    # some 120mm fans stall below 30.
+$hd_fan_duty_low       =  20;    # some 120mm fans stall below 30.
 #$hd_fan_duty_start    =  60;    # HD fan duty cycle when script starts - defined in config file
 
 
@@ -271,8 +271,8 @@ $hd_fan_header  = "FAN2";                 # used for printing to standard output
 ## UTILITY PATHS
 ## The script needs to know where the following utilities are
 $ipmitool   = "/usr/bin/ipmitool";
-$sensors    = "/usr/bin/sensors"
-$smartctl   = "/usr/sbin/smartctl"
+$sensors    = "/usr/bin/sensors";
+$smartctl   = "/usr/sbin/smartctl";
 
 ## HD POLLING INTERVAL
 ## The controller will only poll the harddrives periodically. Since hard drives change temperature slowly
@@ -1081,7 +1081,7 @@ sub set_fan_mode
 # reads CPU temp from output of `sensors`
 sub get_cpu_temp_sensors
 {
-    my $cpu_temp = `$sensors coretemp-isa-0000 | egrep -E \"Package id 0\" | awk '{print $4}' | cut -c 2-5`
+    my $cpu_temp = `$sensors coretemp-isa-0000 | egrep -E \"Package id 0\" | awk \'{print $4}\' | cut -c 2-5`;
     chomp $cpu_temp;
 
     dprint( 1, "CPU Temp: $cpu_temp\n");
