@@ -1081,8 +1081,7 @@ sub set_fan_mode
 # reads CPU temp from output of `sensors`
 sub get_cpu_temp_sensors
 {
-#     my $cpu_temp = `$sensors coretemp-isa-0000 | egrep -E "Package id 0" | awk '{print $4}' | cut -c 2-5`;
-    my $cpu_temp = `$sensors coretemp-isa-0000 | egrep -E "Package id 0" | awk '{print $4}' `;
+    my $cpu_temp = `$sensors coretemp-isa-0000 | egrep -E "Package id 0" | awk '{print \$4}' | cut -c 2-5 `;
     chomp $cpu_temp;
 
     dprint( 1, "CPU Temp: $cpu_temp\n");
