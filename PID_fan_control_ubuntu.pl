@@ -154,7 +154,7 @@ $hd_fan_duty_start     = 60; # HD fan duty cycle when script starts
 ## DEBUG LEVEL
 ## 0 means no debugging. 1,2,3,4 provide more verbosity
 ## You should run this script in at least level 1 to verify its working correctly on your system
-$debug = 2;
+$debug = 0;
 $debug_log = '/root/Debug_PID_fan_control.log';
 
 ## LOG
@@ -233,7 +233,7 @@ $hd_max_fan_speed     = 1800;
 ## These levels are used to control the CPU fans
 $fan_duty_high         = 100;    # percentage on, ie 100% is full speed.
 $fan_duty_med          =  60;
-$fan_duty_low          =  30;
+$fan_duty_low          =  20;
 
 ## HD FAN DUTY LEVELS
 ## These levels are used to control the HD fans
