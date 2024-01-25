@@ -525,7 +525,7 @@ sub get_hd_list_TN
 
 sub get_hd_list
 {
-    my $disk_list = `lsblk | grep disk | grep -v 465 | cut -c 1-3`;
+    my $disk_list = `lsblk | grep disk | grep -v 465 | grep -v zd | cut -c 1-3`;
     dprint(3,"$disk_list\n");
 
     my @vals = split(" ", $disk_list);
