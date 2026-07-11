@@ -147,7 +147,7 @@ $Kp = 16/3;                  # PID control loop proportional gain
 $Ki = 0;                     # PID control loop integral gain
 $Kd = 24;                    # PID control loop derivative gain
 $hd_num_peak = 2;            # Number of warmest HDs to use when calculating average temp
-$hd_fan_duty_start     = 45; # HD fan duty cycle when script starts
+$hd_fan_duty_start     = 60; # HD fan duty cycle when script starts
 
 ## DEBUG LEVEL
 ## 0 means no debugging. 1,2,3,4 provide more verbosity
@@ -1318,7 +1318,6 @@ sub read_config
         $Kd = $config_Kd // $default_Kd;
         $hd_num_peak = $config_num_disks // $default_hd_num_peak;            
         $hd_fan_duty_start = $config_hd_fan_start // $default_hd_fan_duty_start;
-        print "hd_fan_duty_start=$hd_fan_duty_start\n";
 	$config_time = (stat($config_file))[9];
     } else {
         dprint( 0, "Config file not found.  Using default values!\n");
